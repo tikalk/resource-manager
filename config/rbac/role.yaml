@@ -7,6 +7,21 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - "*"
+  resources:
+  - deployments/apps
+  - deployments
+  - apps
+  - apps/deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - resource-managment.tikalk.com
   resources:
   - resourcemanagers

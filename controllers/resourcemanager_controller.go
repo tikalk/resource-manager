@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	appsv1 "k8s.io/api/apps/v1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,7 +52,6 @@ type ResourceManagerReconciler struct {
 func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx)
 	name := req.NamespacedName.String()
-	l.Info(fmt.Sprintf("Starting reconcile obj %s", name))
 
 	// your logic here
 	resourceManagerObj := &resourcemanagmentv1alpha1.ResourceManager{}
@@ -59,7 +60,19 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		l.Error(err, fmt.Sprintf("Failed reconcile obj %s", name))
 	}
 
-	l.Info(fmt.Sprintf("Done reconcile obj %s", name))
+	// pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+	// if err != nil {
+	// 	panic(err.Error())
+	// }
+	// fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
+
+	l.Info(fmt.Sprintf("Starting reconcile obj name: %s, obj: %+v", name, resourceManagerObj))
+
+	deploy := &appsv1.DeploymentList{}
+	err = r.Client.List(ctx, deploy, &client.ListOptions{})
+	fmt.Printf("There are %d deployments in the cluster\n", len(deploy.Items))
+
+	l.Info(fmt.Sprintf("Done reconcile 12-- obj %s", name))
 
 	return ctrl.Result{}, nil
 }
