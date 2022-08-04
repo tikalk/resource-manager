@@ -13,8 +13,8 @@ tilt up
 
 mkdir resource-manager
 cd resource-manager
-operator-sdk init --domain tikalk.com --repo gitlab.com/tikalk.com/resource-manager
-operator-sdk create api --group resource-managment --version v1alpha1 --kind ResourceManager --resource --controller
+operator-sdk init --domain tikalk.com --repo github.com/tikalk/resource-manager
+operator-sdk create api --group resource-management --version v1alpha1 --kind ResourceManager --resource --controller
 # to create the resources
 make generate
 # to create the CRDs

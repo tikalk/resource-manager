@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	resourcemanagmentv1alpha1 "gitlab.com/tikalk.com/resource-manager/api/v1alpha1"
-	"gitlab.com/tikalk.com/resource-manager/controllers"
+	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
+	"github.com/tikalk/resource-manager/controllers"
 	//+kubebuilder:scaffold:imports
 )
 

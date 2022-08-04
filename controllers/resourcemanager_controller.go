@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	resourcemanagmentv1alpha1 "gitlab.com/tikalk.com/resource-manager/api/v1alpha1"
+	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
 )
 
 // ResourceManagerReconciler reconciles a ResourceManager object
@@ -36,9 +36,9 @@ type ResourceManagerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=resource-managment.tikalk.com,resources=resourcemanagers,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=resource-managment.tikalk.com,resources=resourcemanagers/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=resource-managment.tikalk.com,resources=resourcemanagers/finalizers,verbs=update
+//+kubebuilder:rbac:groups=resource-management.tikalk.com,resources=resourcemanagers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=resource-management.tikalk.com,resources=resourcemanagers/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=resource-management.tikalk.com,resources=resourcemanagers/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	resourcemanagmentv1alpha1 "gitlab.com/tikalk.com/resource-manager/api/v1alpha1"
+	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 

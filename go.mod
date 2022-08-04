@@ -1,4 +1,4 @@
-module gitlab.com/tikalk.com/resource-manager
+module github.com/tikalk/resource-manager
 
 go 1.16
 

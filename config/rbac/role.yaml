@@ -22,7 +22,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - resource-managment.tikalk.com
+  - resource-management.tikalk.com
   resources:
   - resourcemanagers
   verbs:
@@ -34,13 +34,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - resource-managment.tikalk.com
+  - resource-management.tikalk.com
   resources:
   - resourcemanagers/finalizers
   verbs:
   - update
 - apiGroups:
-  - resource-managment.tikalk.com
+  - resource-management.tikalk.com
   resources:
   - resourcemanagers/status
   verbs:
