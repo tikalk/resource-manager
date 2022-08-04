@@ -25,3 +25,11 @@ COPY --from=builder /workspace/manager .
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]
+
+
+FROM busybox as local-dev
+WORKDIR /
+COPY build/manager .
+USER 65532:65532
+
+ENTRYPOINT ["/manager"]

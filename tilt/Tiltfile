@@ -1,11 +1,18 @@
+load('ext://restart_process', 'docker_build_with_restart')
 
-
-docker_build("controller", "../", dockerfile="../Dockerfile", only=[
-	"go.mod",
-	"go.sum",
-	"main.go",
-	"api",
-	"controllers"
+compile_cmd = "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/manager main.go"
+local_resource("go-compile", compile_cmd, dir="../", deps=[
+	"../go.mod",
+	"../go.sum",
+	"../main.go",
+	"../api/",
+	"../controllers/",
 ])
-k8s_yaml(kustomize("../config/default/"))
 
+docker_build_with_restart("controller", "../", dockerfile="../Dockerfile", only=[
+	"build/",
+], live_update=[
+    sync("build/", "/"),
+], target="local-dev", entrypoint="/manager")
+k8s_yaml(kustomize("../config/default/"))
+k8s_resource("resource-manager-controller-manager", resource_deps=["go-compile"])
