@@ -1,0 +1,6 @@
+apiVersion: resource-managment.tikalk.com/v1alpha1
+kind: ResourceManager
+metadata:
+  name: resourcemanager-sample
+spec:
+  # Add fields here

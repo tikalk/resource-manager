@@ -1,0 +1,24 @@
+# permissions for end users to edit resourcemanagers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: resourcemanager-editor-role
+rules:
+- apiGroups:
+  - resource-managment.tikalk.com
+  resources:
+  - resourcemanagers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - resource-managment.tikalk.com
+  resources:
+  - resourcemanagers/status
+  verbs:
+  - get
