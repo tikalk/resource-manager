@@ -50,7 +50,7 @@ type ResourceManagerReconciler struct {
 func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx)
 	name := req.NamespacedName.String()
-	l.Info("Starting reconcile obj %s", name)
+	l.Info(fmt.Sprintf("Starting reconcile obj %s", name))
 
 	// your logic here
 	resourceManagerObj := &resourcemanagmentv1alpha1.ResourceManager{}
@@ -59,7 +59,7 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		l.Error(err, fmt.Sprintf("Failed reconcile obj %s", name))
 	}
 
-	l.Info("Done reconcile obj %s", name)
+	l.Info(fmt.Sprintf("Done reconcile obj %s", name))
 
 	return ctrl.Result{}, nil
 }
