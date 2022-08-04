@@ -1,6 +1,20 @@
 apiVersion: resource-managment.tikalk.com/v1alpha1
 kind: ResourceManager
 metadata:
-  name: resourcemanager-sample
+  name: resource-manager-sample
 spec:
-  # Add fields here
+  active: true
+  dry-run: false
+  resources: "namespace"
+  selector:
+    matchLabels:
+      name: managed-namespace
+  action: "delete"
+  condition:
+  - type: expiry
+    after: "1m"
+  # OR
+  # - type: time
+  #   interval: daily
+  #   time: "20:59:59"
+#status:

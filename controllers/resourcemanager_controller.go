@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,9 +48,18 @@ type ResourceManagerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	l := log.FromContext(ctx)
+	name := req.NamespacedName.String()
+	l.Info("Starting reconcile obj %s", name)
 
 	// your logic here
+	resourceManagerObj := &resourcemanagmentv1alpha1.ResourceManager{}
+	err := r.Get(ctx, req.NamespacedName, resourceManagerObj)
+	if err != nil {
+		l.Error(err, fmt.Sprintf("Failed reconcile obj %s", name))
+	}
+
+	l.Info("Done reconcile obj %s", name)
 
 	return ctrl.Result{}, nil
 }
