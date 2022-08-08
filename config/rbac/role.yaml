@@ -13,6 +13,7 @@ rules:
   - deployments
   - apps
   - apps/deployments
+  - namespaces
   verbs:
   - create
   - delete
