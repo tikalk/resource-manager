@@ -83,7 +83,7 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// config handler object
 	h := handlers.Obj{
 		Name: req.NamespacedName,
-		R:    r.Client,
+		C:    r.Client,
 		Ctx:  ctx,
 		L:    l,
 		Spec: resourceManagerObj.Spec,
