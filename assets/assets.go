@@ -1,3 +1,9 @@
+// FOR FUTURE USE I CREATED assets PACKAGE TO BE ABLE TO CREATE / DEPLOY ANY OBJECT FROM YAML FILE.
+// CAN BE DONE BY:
+// import "https://github.com/tikalk/resource-manager/assets"
+// ...
+// namespaceDeployment := assets.GetDeploymentFromFile("manifests/namespace_deploy.yaml")
+
 package assets
 
 import (
