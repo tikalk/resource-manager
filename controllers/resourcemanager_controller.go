@@ -19,15 +19,18 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
+	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
-
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
 )
 
 // ResourceManagerReconciler reconciles a ResourceManager object
@@ -54,10 +57,25 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	name := req.NamespacedName.String()
 
 	// your logic here
+	// Get the resourcemanager Operator object.
 	resourceManagerObj := &resourcemanagmentv1alpha1.ResourceManager{}
 	err := r.Get(ctx, req.NamespacedName, resourceManagerObj)
-	if err != nil {
-		l.Error(err, fmt.Sprintf("Failed reconcile obj %s", name))
+	// If one is not found, log a message
+	if err != nil && errors.IsNotFound(err) {
+		l.Error(err, fmt.Sprintf("Failed reconcile obj %s , Operator resource not found", name))
+
+		// If the Operator is unable to access its custom resource (for any reason besides a simple IsNotFound error)
+		// set the condition to True with the reason, OperatorResourceNotAvailable.
+	} else if err != nil {
+		l.Error(err, "Error getting operator resource object")
+		meta.SetStatusCondition(&resourceManagerObj.Status.Conditions, metav1.Condition{
+			Type:               "OperatorDegraded",
+			Status:             metav1.ConditionTrue,
+			Reason:             "OperatorResourceNotAvailable",
+			LastTransitionTime: metav1.NewTime(time.Now()),
+			Message:            fmt.Sprintf("unable to get operator custom resource: %s", err.Error()),
+		})
+		return ctrl.Result{}, utilerrors.NewAggregate([]error{err, r.Status().Update(ctx, resourceManagerObj)})
 	}
 
 	// pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
@@ -72,9 +90,17 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	err = r.Client.List(ctx, deploy, &client.ListOptions{})
 	fmt.Printf("There are %d deployments in the cluster\n", len(deploy.Items))
 
+	// Finally, if the Reconcile() function has completed with no critical errors
+	// set the OperatorDegraded condition to False.
 	l.Info(fmt.Sprintf("Done reconcile 12-- obj %s", name))
-
-	return ctrl.Result{}, nil
+	meta.SetStatusCondition(&resourceManagerObj.Status.Conditions, metav1.Condition{
+		Type:               "OperatorDegraded",
+		Status:             metav1.ConditionFalse,
+		Reason:             "list deployments succeeded",
+		LastTransitionTime: metav1.NewTime(time.Now()),
+		Message:            "operator successfully reconciling",
+	})
+	return ctrl.Result{}, utilerrors.NewAggregate([]error{err, r.Status().Update(ctx, resourceManagerObj)})
 }
 
 // SetupWithManager sets up the controller with the Manager.
