@@ -65,7 +65,7 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		l.Error(err, fmt.Sprintf("Failed reconcile obj %s , Operator resource not found", name))
 
 		// If the Operator is unable to access its custom resource (for any reason besides a simple IsNotFound error)
-		// set the condition to True with the reason, OperatorResourceNotAvailable.
+		// set the OperatorDegraded condition to True with the reason OperatorResourceNotAvailable.
 	} else if err != nil {
 		l.Error(err, "Error getting operator resource object")
 		meta.SetStatusCondition(&resourceManagerObj.Status.Conditions, metav1.Condition{
@@ -91,7 +91,7 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	fmt.Printf("There are %d deployments in the cluster\n", len(deploy.Items))
 
 	// Finally, if the Reconcile() function has completed with no critical errors
-	// set the OperatorDegraded condition to False.
+	// set the OperatorDegraded condition to False with the reason operatorv1alpha1.ReasonSucceeded,
 	l.Info(fmt.Sprintf("Done reconcile 12-- obj %s", name))
 	meta.SetStatusCondition(&resourceManagerObj.Status.Conditions, metav1.Condition{
 		Type:               "OperatorDegraded",
