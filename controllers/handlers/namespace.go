@@ -35,7 +35,7 @@ func (o Obj) HandleNamespaceObj() {
 				if err != nil {
 					o.L.Error(err, fmt.Sprintf("cannot delete namespaces\n"))
 				}
-				fmt.Printf("%s: namespace '%s' has been deleted \n", o.Name, o.Name)
+				fmt.Printf("%s: namespace '%s' has been deleted \n", o.Name, namespace.Name)
 			}
 		} else {
 			fmt.Printf("%s: %d seconds has left to namespace '%s' \n", o.Name, secondsUntilExpire, namespace.Name)
