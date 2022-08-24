@@ -17,8 +17,11 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
+	"math/rand"
 	"path/filepath"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -29,6 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
@@ -58,7 +63,8 @@ var _ = BeforeSuite(func() {
 		ErrorIfCRDPathMissing: true,
 	}
 
-	cfg, err := testEnv.Start()
+	var err error
+	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
@@ -78,3 +84,38 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
+
+// SetupTest will set up a testing environment.
+// This includes:
+// * starting the 'ResourceManagerReconciler'
+// * stopping the 'ResourceManagerReconciler" after the test ends
+// Call this function at the start of each of your tests.
+func SetupTest(ctx context.Context) {
+	var cancelFunc context.CancelFunc
+
+	BeforeEach(func() {
+		mgr, err := ctrl.NewManager(cfg, ctrl.Options{})
+		Expect(err).NotTo(HaveOccurred(), "failed to create manager")
+
+		controller := &ResourceManagerReconciler{
+			Client: mgr.GetClient(),
+		}
+		err = controller.SetupWithManager(mgr)
+		Expect(err).NotTo(HaveOccurred(), "failed to setup controller")
+
+		ctx, cancelFunc = context.WithCancel(ctx)
+		go func() {
+			err := mgr.Start(ctx)
+			Expect(err).NotTo(HaveOccurred(), "failed to start manager")
+		}()
+	})
+
+	AfterEach(func() {
+		// stop the manager (with his controllers)
+		cancelFunc()
+	})
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}

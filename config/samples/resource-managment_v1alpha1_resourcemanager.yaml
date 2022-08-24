@@ -8,7 +8,7 @@ spec:
   resources: "namespace"
   selector:
     matchLabels:
-      name: managed-namespace
+      name: managed-namespace1
   action: "delete"
   condition:
   - type: expiry
