@@ -7,20 +7,30 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - "*"
+  - '*'
   resources:
-  - deployments/apps
-  - deployments
-  - apps
-  - apps/deployments
+  - namespaces
   verbs:
-  - create
   - delete
   - get
   - list
   - patch
   - update
   - watch
+- apiGroups:
+  - '*'
+  resources:
+  - namespaces/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - '*'
+  resources:
+  - namespaces/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - resource-management.tikalk.com
   resources:

@@ -32,6 +32,8 @@ type ResourceManagerSpec struct {
 	DryRun bool `json:"dry-run,omitempty"`
 
 	// TODO: add validation
+	//ApiVersion string                `json:"apiVersion"`
+	//Kind       string                `json:"kind"`
 	Resources string                `json:"resources"`
 	Selector  *metav1.LabelSelector `json:"selector"`
 

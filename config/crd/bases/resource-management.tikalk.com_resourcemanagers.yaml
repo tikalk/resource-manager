@@ -56,7 +56,8 @@ spec:
               dry-run:
                 type: boolean
               resources:
-                description: 'TODO: add validation'
+                description: 'TODO: add validation ApiVersion string                `json:"apiVersion"`
+                  Kind       string                `json:"kind"`'
                 type: string
               selector:
                 description: A label selector is a label query over a set of resources.
