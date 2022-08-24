@@ -37,7 +37,7 @@ var _ = Context("Inside of a ResourceManager", func() {
 						Condition: resourcemanagmentv1alpha1.Condition{
 							Type: "expiry",
 						},
-						After: "1m",
+						After: "1s",
 					}},
 				},
 			}
@@ -54,7 +54,7 @@ var _ = Context("Inside of a ResourceManager", func() {
 				time.Second*5, time.Millisecond*500).Should(BeNil())
 
 			Expect(rmObj.Spec.Action).To(Equal("delete"))
-			Expect(rmObj.Spec.Condition[0].After).To(Equal("1m"))
+			Expect(rmObj.Spec.Condition[0].After).To(Equal("1s"))
 
 			// create namespace obj
 			myNamespaceObj := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{
@@ -70,7 +70,7 @@ var _ = Context("Inside of a ResourceManager", func() {
 			// validate creation
 			nsObj, _ := getResourceByName(ctx, myNamespaceObj.Name)
 			Expect(string(nsObj.Status.Phase)).Should(Equal("Active"))
-			time.Sleep(time.Minute + 15*time.Second)
+			time.Sleep(10 * time.Second)
 
 		})
 
