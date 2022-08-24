@@ -153,7 +153,6 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 // SetupWithManager sets up the controller with the Manager.
 func (r *ResourceManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	collection = make(map[types.NamespacedName]FHandler)
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ResourceManager{}).
 		Complete(r)

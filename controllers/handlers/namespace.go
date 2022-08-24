@@ -10,7 +10,7 @@ import (
 
 //  keep everything in a struct
 
-//HandleNamespaceObj handle namespace objects that related to the resource-manager controller
+// HandleNamespaceObj handle namespace objects that related to the resource-manager controller
 func (o Obj) HandleNamespaceObj() {
 	// get all the namespaces with the desired selector labels
 	namespaces, err := GetNamespacesByLabel(o)
