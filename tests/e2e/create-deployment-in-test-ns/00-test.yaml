@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resource-manager-controller-manager
+  # namespace: resource-manager-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/managed-by: tilt
+        control-plane: controller-manager
+        tilt.dev/pod-template-hash: f8e210a1f1e86600dcad
+    spec:
+      containers:
+        - name: manager
+          image: k3d-local-k8s-reg:5000/controller:tilt-f86ed2c112b2af3e
