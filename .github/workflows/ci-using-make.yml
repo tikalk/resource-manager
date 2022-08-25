@@ -23,7 +23,7 @@ jobs:
       run: make
       
     - name: build docker image
-      run: IMG=ghcr.io/controller:latest make docker-build
+      run: IMG=ghcr.io/${{ github.repository_owner }}/controller:latest make docker-build
       
     - name: push docker image
-      run: IMG=ghcr.io/controller:latest make docker-push
+      run: IMG=ghcr.io/${{ github.repository_owner }}/controller:latest make docker-push
