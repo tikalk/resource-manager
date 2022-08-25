@@ -25,6 +25,8 @@ testbin/*
 *~
 .vscode
 
+
+#Commented reagrding error on docker-build in Github-actions: https://github.com/tikalk/resource-manager/runs/8012755881?check_suite_focus=true#:~:text=COPY%20failed%3A%20file,exit%20code%202.
 # # binaries
 # build/
 # manager
