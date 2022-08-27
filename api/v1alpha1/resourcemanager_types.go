@@ -23,17 +23,21 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type ResourceSelector struct {
+	Kind     string                `json:"kind"`
+	Selector *metav1.LabelSelector `json:"selector"`
+	//NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector"`
+}
+
 // ResourceManagerSpec defines the desired state of ResourceManager
 type ResourceManagerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Active bool `json:"active,omitempty"`
-	DryRun bool `json:"dry-run,omitempty"`
+	Disabled bool `json:"disabled,omitempty"`
+	DryRun   bool `json:"dry-run,omitempty"`
 
-	// TODO: add validation
-	Resources string                `json:"resources"`
-	Selector  *metav1.LabelSelector `json:"selector"`
+	ManagedResource ResourceSelector `json:"resource"`
 
 	// TODO: add validation + enum
 	Action string `json:"action"`

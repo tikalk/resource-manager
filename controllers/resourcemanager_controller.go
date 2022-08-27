@@ -21,7 +21,6 @@ import (
 	"fmt"
 	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -56,46 +55,35 @@ type ResourceManagerReconciler struct {
 
 var collection map[types.NamespacedName]chan struct{}
 
-//type FHandler struct {
-//	F    func(ctx context.Context,
-//		//stopper chan struct{},
-//		stop chan bool,
-//		action string,
-//		condition []resourcemanagmentv1alpha1.ExpiryCondition,
-//		selector metav1.LabelSelector,
-//		clientset *kubernetes.Clientset)
-//	Stop chan bool
-//}
-
 var clientset *kubernetes.Clientset
 
-func handlerFactory(ctx context.Context, resourceType string) func(
+func handlerFactory(ctx context.Context, managedKind string, disabled bool) func(
 	ctx context.Context,
 	stopper chan struct{},
 	action string,
 	condition []resourcemanagmentv1alpha1.ExpiryCondition,
-	selectorLabels metav1.LabelSelector,
+	managedResource resourcemanagmentv1alpha1.ResourceSelector,
+	namespace string,
 	clientset *kubernetes.Clientset) {
 
 	return func(ctx context.Context,
 		stopper chan struct{},
 		action string,
 		condition []resourcemanagmentv1alpha1.ExpiryCondition,
-		selector metav1.LabelSelector,
+		managedResource resourcemanagmentv1alpha1.ResourceSelector,
+		namespace string,
 		clientset *kubernetes.Clientset) {
 		l := log.FromContext(ctx)
-		switch resourceType {
-		case "namespace":
-			HandleNamespace(ctx, stopper, action, condition, selector, clientset)
-		default:
-			l.Error(errors.NewBadRequest("math: square root of negative number"), fmt.Sprintf("Unexpected resourceType %s", resourceType))
+		if disabled {
+			HandleDisabled(ctx, stopper, action, condition, managedResource, namespace, clientset)
+		} else {
+			switch managedKind {
+			case "Namespace":
+				HandleNamespace(ctx, stopper, action, condition, managedResource, namespace, clientset)
+			default:
+				l.Error(errors.NewBadRequest("math: square root of negative number"), fmt.Sprintf("Unexpected managedKind %s", managedKind))
+			}
 		}
-		//select {
-		//case <-stopper:
-		//	return
-		//default:
-		//	time.Sleep(time.Second * 5)
-		//}
 	}
 }
 
@@ -119,40 +107,26 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		l.Error(err, fmt.Sprintf("Failed reconcile obj %s", req.NamespacedName))
 	}
 
-	fmt.Printf("found ResourceManager object: %s \n", resourceManager.Name)
-
-	//// config handler object
-	//h := handlers.Obj{
-	//	Name: req.NamespacedName,
-	//	C:    r.Client,
-	//	Ctx:  ctx,
-	//	L:    l,
-	//	Spec: resourceManagerObj.Spec,
-	//}
-	//
-	//l.Info(fmt.Sprintf(
-	//	"\n"+
-	//		" ResourceType: %s \n"+
-	//		" selectorLables %s \n"+
-	//		" action: %s \n"+
-	//		" condition: %s \n"+
-	//		" type: %s \n",
-	//	h.Spec.Resources,
-	//	h.Spec.Selector.MatchLabels,
-	//	h.Spec.Action,
-	//	h.Spec.Condition[0].After,
-	//	h.Spec.Condition[0].Type))
+	//fmt.Printf("found ResourceManager object: %s \n", resourceManager.Name)
 
 	// check if resource exists in our collection, if so, delete
 	if _, ok := collection[req.NamespacedName]; ok {
-		l.Info(fmt.Sprintf("ResourceManager object %s found. Do nothing...", req.NamespacedName))
-		return ctrl.Result{}, nil
+		l.Info(fmt.Sprintf("ResourceManager %s changed. Recreating...", req.NamespacedName))
+		close(collection[req.NamespacedName])
+		delete(collection, req.NamespacedName)
+	} else {
+		l.Info(fmt.Sprintf("ResourceManager %s created. Creating...", req.NamespacedName))
 	}
 
 	collection[req.NamespacedName] = make(chan struct{})
-	handler := handlerFactory(ctx, resourceManager.Spec.Resources)
-	l.Info(fmt.Sprintf("ResourceManager object %s created. Starting handler...", req.NamespacedName))
-	go handler(ctx, collection[req.NamespacedName], resourceManager.Spec.Action, resourceManager.Spec.Condition, *resourceManager.Spec.Selector, clientset)
+	handler := handlerFactory(ctx, resourceManager.Spec.ManagedResource.Kind, resourceManager.Spec.Disabled)
+	l.Info(fmt.Sprintf("Starting handler %s for ...", req.NamespacedName))
+	go handler(ctx, collection[req.NamespacedName],
+		resourceManager.Spec.Action,
+		resourceManager.Spec.Condition,
+		resourceManager.Spec.ManagedResource,
+		req.NamespacedName.Namespace,
+		clientset)
 
 	//
 	//deploy := &appsv1.DeploymentList{}

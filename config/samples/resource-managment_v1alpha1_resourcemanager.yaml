@@ -3,12 +3,22 @@ kind: ResourceManager
 metadata:
   name: resource-manager-sample
 spec:
-  active: true
+  disabled: false
   dry-run: false
-  resources: "namespace"
-  selector:
-    matchLabels:
-      name: managed-namespace1
+  resource:
+    kind: "Namespace"
+    selector:
+      matchLabels:
+        component: redis
+      matchExpressions:
+        - { key: tier, operator: In, values: [ cache ] }
+        - { key: environment, operator: NotIn, values: [ dev, dev2 ] }
+#    namespaceSelector:
+#      matchLabels:
+#        component: redis
+#      matchExpressions:
+#        - { key: tier, operator: In, values: [ cache ] }
+#        - { key: environment, operator: NotIn, values: [ dev ] }
   action: "delete"
   condition:
   - type: expiry
