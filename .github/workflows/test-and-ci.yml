@@ -8,7 +8,7 @@ on:
   pull_request:
     branches: 
       - main
-      - docker-build
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
