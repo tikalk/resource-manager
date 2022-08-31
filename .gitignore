@@ -25,6 +25,10 @@ testbin/*
 *~
 .vscode
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> docker-build
 # binaries
 build/
 manager

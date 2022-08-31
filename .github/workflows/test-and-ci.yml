@@ -28,7 +28,11 @@ jobs:
 
     - name: Install dependencies
       run: make
+<<<<<<< HEAD
 
+=======
+      
+>>>>>>> docker-build
     - name: Test using Go test
       run: make test
 
@@ -41,6 +45,12 @@ jobs:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+<<<<<<< HEAD
 
     - name: Push docker image
       run: docker push ghcr.io/${{ github.repository_owner }}/resource-manager:${{ github.sha }} 
+=======
+      
+    - name: Push docker image
+      run: docker push ghcr.io/${{ github.repository_owner }}/resource-manager:${{ github.sha }}
+>>>>>>> docker-build
