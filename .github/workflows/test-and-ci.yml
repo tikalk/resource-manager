@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-    #  - docker-build   ## should be Enable only when testing CI workflow changes.
+    #  - docker-build   ## should be Enable only when testing CI workflow changes and there's not PR.
   pull_request:
     branches: 
       - main
@@ -12,10 +12,11 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  DOCKER_BUILDKIT: 1
 
 
 jobs:
-  build-and-push-image:
+  test-build-and-push-image:
     runs-on: ubuntu-latest
     permissions:
       packages: write
