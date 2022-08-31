@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - main
-      - docker-build
+      # - docker-build   ## should be Enable only when testing CI workflow changes.
   pull_request:
     branches: 
       - main
-      - docker-build
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -36,8 +36,8 @@ jobs:
     - name: Install dependencies
       run: make
       
-    - name: test and build docker image
-      run: IMG=ghcr.io/${{ github.repository_owner }}/resource-manager:latest make docker-build
+    - name: Test and build docker image
+      run: IMG=ghcr.io/${{ github.repository_owner }}/resource-manager:${{ github.sha }} make docker-build
       
-    - name: push docker image
-      run: IMG=ghcr.io/${{ github.repository_owner }}/resource-manager:latest make docker-push
+    - name: Push docker image
+      run: IMG=ghcr.io/${{ github.repository_owner }}/resource-manager:${{ github.sha }} make docker-push
