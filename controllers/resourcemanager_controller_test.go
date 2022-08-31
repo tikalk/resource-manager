@@ -2,12 +2,13 @@ package controllers
 
 import (
 	"context"
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 
 	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
 )
@@ -70,7 +71,7 @@ var _ = Context("Inside of a ResourceManager", func() {
 			// validate creation
 			nsObj, _ := getResourceByName(ctx, myNamespaceObj.Name)
 			Expect(string(nsObj.Status.Phase)).Should(Equal("Active"))
-			time.Sleep(10 * time.Second)
+			time.Sleep(15 * time.Second)
 
 		})
 
