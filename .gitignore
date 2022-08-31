@@ -25,7 +25,6 @@ testbin/*
 *~
 .vscode
 
-
 # binaries
 build/
 manager
