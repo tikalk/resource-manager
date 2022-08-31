@@ -12,19 +12,19 @@ import (
 //  keep everything in a struct
 
 // HandledeploymentObj handle deployment objects that related to the resource-manager controller
-func (d depObj) HandleDeployObj() {
+func (d Obj) HandleDeployObj() {
 	// get all the deployments with the desired selector labels
 	deploy, err := GetDeployByLabel(d)
 	if err != nil {
-		d.L.Error(err, fmt.Sprintf("%s: cannot list deployments\n", d.Name))
+		d.L.Error(err, fmt.Sprintf("%v: cannot list deployments\n", d.Name))
 	}
 
 	if len(deploy) <= 0 {
-		fmt.Printf("%s: did not found any deployments with the requested label\n", d.Name)
+		fmt.Printf("%v: did not found any deployments with the requested label\n", d.Name)
 		return
 	}
 
-	fmt.Printf("found %d deployments with the requested label\n", len(deploy))
+	fmt.Printf("found %v deployments with the requested label\n", len(deploy))
 
 	for _, dep := range deploy {
 		expired, secondsUntilExpire := utils.IsObjExpired(dep.CreationTimestamp, d.Spec.Condition[0].After)
@@ -34,19 +34,19 @@ func (d depObj) HandleDeployObj() {
 				fmt.Printf("deployment '%s' has been expired and will be deleted \n", dep.Name)
 				err := d.C.Delete(d.Ctx, dep.DeepCopy(), &client.DeleteOptions{})
 				if err != nil {
-					d.L.Error(err, fmt.Sprintf("cannot delete deployments\n"))
+					d.L.Error(err, fmt.Sprintf("cannot delete deployments\n %v", dep.Name))
 				}
-				fmt.Printf("%s: deployment '%s' has been deleted \n", d.Name, dep.Name)
+				fmt.Printf("%v: deployment '%v' has been deleted \n", d.Name, dep.Name)
 			}
 		} else {
-			fmt.Printf("%s: %d seconds has left to deployment '%s' \n", d.Name, secondsUntilExpire, dep.Name)
+			fmt.Printf("%v: %v seconds has left to deployment '%s' \n", d.Name, secondsUntilExpire, dep.Name)
 
 		}
 	}
 }
 
 // GetdeploymentsByLabel get only deployments that contains a specific label
-func GetDeployByLabel(d depObj) ([]appsv1.Deployment, error) {
+func GetDeployByLabel(d Obj) ([]appsv1.Deployment, error) {
 
 	var listOfDeployments []appsv1.Deployment
 	depListObj := &appsv1.DeploymentList{}
@@ -54,12 +54,10 @@ func GetDeployByLabel(d depObj) ([]appsv1.Deployment, error) {
 	if err := d.C.List(d.Ctx, depListObj, &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(d.Spec.Selector.MatchLabels),
 	}); err != nil {
-		d.L.Error(err, fmt.Sprintf("%s: unable to fetch deployments", d.Name))
+		d.L.Error(err, fmt.Sprintf("%v: unable to fetch deployments", d.Name))
 		return nil, err
 	}
 
-	for _, item := range depListObj.Items {
-		listOfDeployments = append(listOfDeployments, item)
-	}
+	listOfDeployments = append(listOfDeployments, depListObj.Items...)
 	return listOfDeployments, nil
 }
