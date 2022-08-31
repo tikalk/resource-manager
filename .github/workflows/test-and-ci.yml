@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - docker-build   ## should be Enable only when testing CI workflow changes.
+    #  - docker-build   ## should be Enable only when testing CI workflow changes.
   pull_request:
     branches: 
       - main
