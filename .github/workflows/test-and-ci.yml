@@ -1,10 +1,10 @@
-name: CI using Makefile
+name: Testing and CI to github registry.
 
 on:
   push:
     branches:
       - main
-      # - docker-build   ## should be Enable only when testing CI workflow changes.
+    #  - docker-build   ## should be Enable only when testing CI workflow changes and there's not PR.
   pull_request:
     branches: 
       - main
@@ -15,7 +15,7 @@ env:
 
 
 jobs:
-  build-and-push-image:
+  test-build-and-push-image:
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -26,6 +26,15 @@ jobs:
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Install dependencies
+      run: make
+
+    - name: Test using Go test
+      run: make test
+
+    - name: Build docker image
+      run: docker build --target builder --target distroless -t ghcr.io/${{ github.repository_owner }}/resource-manager:${{ github.sha }} .
+
     - name: Log in to Github Container registry
       uses: docker/login-action@v2
       with:
@@ -33,11 +42,5 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Install dependencies
-      run: make
-      
-    - name: Test and build docker image
-      run: IMG=ghcr.io/${{ github.repository_owner }}/resource-manager:${{ github.sha }} make docker-build
-      
     - name: Push docker image
-      run: IMG=ghcr.io/${{ github.repository_owner }}/resource-manager:${{ github.sha }} make docker-push
+      run: docker push ghcr.io/${{ github.repository_owner }}/resource-manager:${{ github.sha }} 
