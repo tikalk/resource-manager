@@ -43,12 +43,13 @@ spec:
               condition:
                 items:
                   properties:
-                    after:
-                      type: string
                     type:
                       type: string
+                    hour:
+                      type: string
+                    after:
+                      type: string
                   required:
-                  - after
                   - type
                   type: object
                 type: array

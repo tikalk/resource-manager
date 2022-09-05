@@ -106,6 +106,8 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		h.Spec.Condition[0].After,
 		h.Spec.Condition[0].Type))
 
+	l.Info("I'm on collection deletion block")
+
 	// check if resource exists in our collection, if so, delete
 	if _, ok := collection[h.Name]; ok {
 		l.Info(fmt.Sprintf("Stopping loop for %s\n", h.Name))
@@ -116,6 +118,8 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	switch h.Spec.Resources {
 	case "namespace":
+		l.Info("I'm on NAMESPACE block")
+
 		// add the function and its stop-channel to collection
 		collection[h.Name] = FHandler{
 			F: func(stop chan bool) {
@@ -125,6 +129,8 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 						l.Info(fmt.Sprintf("%s Got stop signal!\n", h.Name))
 						return
 					default:
+						l.Info("I'm on Default block")
+
 						h.HandleNamespaceObj()
 						time.Sleep(5 * time.Second)
 					}
@@ -137,15 +143,9 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		c := collection[h.Name]
 
 		// execute in a new thread
-
 		go c.F(c.Stop)
+
 	}
-	//
-	//deploy := &appsv1.DeploymentList{}
-	//err = r.Client.List(ctx, deploy, &client.ListOptions{})
-	//fmt.Printf("There are %d deployments in the cluster\n", len(deploy.Items))
-	//
-	//l.Info(fmt.Sprintf("Done reconcile 12-- obj %s", name))
 
 	return ctrl.Result{}, nil
 }
