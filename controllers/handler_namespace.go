@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -40,28 +39,33 @@ out:
 	l.Info(fmt.Sprintf("actionHandler end <%s>", namespace))
 }
 
-func HandleNamespace(ctx context.Context,
-	stopper chan struct{},
-	action string,
-	condition []resourcemanagmentv1alpha1.ExpiryCondition,
-	managedResource resourcemanagmentv1alpha1.ResourceSelector,
-	namespace string,
-	clientset *kubernetes.Clientset) {
+func HandleNamespace(p HandlerParams) {
 
-	l := log.FromContext(ctx)
-	l.Info(fmt.Sprintf("HandleNamespace begin <%s>", managedResource.Kind))
+	//	ctx context.Context,
+	//	stopper chan struct{},
+	//	action string,
+	//	condition []resourcemanagmentv1alpha1.ExpiryCondition,
+	//	resourceKind string,
+	//	labelSelector *metav1.LabelSelector,
+	//	namespace string,
+	//	clientset *kubernetes.Clientset
+	//
+	//)
+
+	l := log.FromContext(p.ctx)
+	l.Info(fmt.Sprintf("HandleNamespace begin <%s>", p.spec.ResourceKind))
 
 	//collection := make(map[types.NamespacedName]chan struct{})
 	collection := make(map[string]chan struct{})
 
-	selector, _ := metav1.LabelSelectorAsSelector(managedResource.Selector)
+	selector, _ := metav1.LabelSelectorAsSelector(p.spec.Selector)
 	//l.Info(fmt.Sprintf("HandleNamespace selector: <%s>", selector.String()))
 
 	labelOptions := informers.WithTweakListOptions(func(opts *metav1.ListOptions) {
 		opts.LabelSelector = selector.String()
 	})
 
-	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(namespace), labelOptions)
+	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(p.namespace), labelOptions)
 	informer := factory.Core().V1().Namespaces().Informer()
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
@@ -71,7 +75,7 @@ func HandleNamespace(ctx context.Context,
 			fmt.Printf("Namespace added: %s\nLabels - %v\n\n", name, labels)
 			stopper := make(chan struct{})
 			collection[name] = stopper
-			go actionHandler(ctx, stopper, name, clientset)
+			go actionHandler(p.ctx, stopper, name, clientset)
 		},
 
 		UpdateFunc: func(oldObj interface{}, obj interface{}) {
@@ -83,7 +87,7 @@ func HandleNamespace(ctx context.Context,
 			delete(collection, name)
 			stopper := make(chan struct{})
 			collection[name] = stopper
-			go actionHandler(ctx, stopper, name, clientset)
+			go actionHandler(p.ctx, stopper, name, clientset)
 		},
 
 		DeleteFunc: func(obj interface{}) {
@@ -96,13 +100,13 @@ func HandleNamespace(ctx context.Context,
 		},
 	})
 
-	informer.Run(stopper)
+	informer.Run(p.stopper)
 
-	l.Info(fmt.Sprintf("HandleNamespace cleanup: action <%s>", action))
+	l.Info(fmt.Sprintf("HandleNamespace cleanup: action <%s>", p.spec.Action))
 	for _, stopper := range collection {
 		close(stopper)
 	}
 
-	l.Info(fmt.Sprintf("HandleNamespace end: action <%s>", action))
+	l.Info(fmt.Sprintf("HandleNamespace end: action <%s>", p.spec.Action))
 
 }
