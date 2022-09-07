@@ -132,20 +132,30 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			},
 			Stop: make(chan bool),
 		}
-
-		// export to new var
-		c := collection[h.Name]
-
-		// execute in a new thread
-
-		go c.F(c.Stop)
+	case "deployment":
+		// add the function and its stop-channel to collection
+		collection[h.Name] = FHandler{
+			F: func(stop chan bool) {
+				for {
+					select {
+					case <-stop:
+						l.Info(fmt.Sprintf("%s Got stop signal!\n", h.Name))
+						return
+					default:
+						h.HandleDeployObj()
+						time.Sleep(5 * time.Second)
+					}
+				}
+			},
+			Stop: make(chan bool),
+		}
 	}
-	//
-	//deploy := &appsv1.DeploymentList{}
-	//err = r.Client.List(ctx, deploy, &client.ListOptions{})
-	//fmt.Printf("There are %d deployments in the cluster\n", len(deploy.Items))
-	//
-	//l.Info(fmt.Sprintf("Done reconcile 12-- obj %s", name))
+
+	// export to new var
+	c := collection[h.Name]
+
+	// execute in a new thread
+	go c.F(c.Stop)
 
 	return ctrl.Result{}, nil
 }

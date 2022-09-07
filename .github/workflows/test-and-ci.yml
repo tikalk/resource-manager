@@ -1,0 +1,45 @@
+name: Testing and CI to github registry.
+
+on:
+  pull_request:
+    branches: 
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+
+jobs:
+  test-build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install dependencies
+      run: make
+
+    - name: Test using Go test
+      run: make test
+
+    - name: Build docker image
+      run: docker build --target release -t ghcr.io/${{ github.repository_owner }}/resource-manager:${{ github.sha }} .
+      if: github.event_name == 'push'
+
+    - name: Log in to Github Container registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      if: github.event_name == 'push'
+
+    - name: Push docker image
+      run: docker push ghcr.io/${{ github.repository_owner }}/resource-manager:${{ github.sha }}
+      if: github.event_name == 'push'
