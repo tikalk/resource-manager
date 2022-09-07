@@ -28,12 +28,12 @@ type ResourceManagerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Active bool `json:"active,omitempty"`
-	DryRun bool `json:"dry-run,omitempty"`
+	Disabled bool `json:"active,omitempty"`
+	DryRun   bool `json:"dry-run,omitempty"`
 
 	// TODO: add validation
-	Resources string                `json:"resources"`
-	Selector  *metav1.LabelSelector `json:"selector"`
+	ResourceKind string                `json:"resourceKind"`
+	Selector     *metav1.LabelSelector `json:"selector"`
 
 	// TODO: add validation + enum
 	Action string `json:"action"`
