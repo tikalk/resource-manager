@@ -20,8 +20,8 @@ spec:
 #        - { key: environment, operator: NotIn, values: [ dev ] }
   action: "NONE"
   condition:
-  - type: expiry
-    after: "1m"
+    type: expiry
+    after: "3m"
   # OR
   # - type: time
   #   interval: daily

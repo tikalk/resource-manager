@@ -40,17 +40,15 @@ spec:
                 description: 'TODO: add validation + enum'
                 type: string
               condition:
-                items:
-                  properties:
-                    after:
-                      type: string
-                    type:
-                      type: string
-                  required:
-                  - after
-                  - type
-                  type: object
-                type: array
+                properties:
+                  after:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - after
+                - type
+                type: object
               disabled:
                 type: boolean
               dry-run:

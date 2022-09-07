@@ -61,6 +61,7 @@ type HandlerParams struct {
 	ctx       context.Context
 	stopper   chan struct{}
 	spec      resourcemanagmentv1alpha1.ResourceManagerSpec
+	name      string
 	namespace string
 	clientset *kubernetes.Clientset
 }
@@ -117,6 +118,7 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			go handler(HandlerParams{ctx,
 				collection[req.NamespacedName],
 				resourceManager.Spec,
+				req.NamespacedName.String(),
 				req.NamespacedName.Namespace,
 				clientset})
 		}

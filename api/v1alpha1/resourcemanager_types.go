@@ -44,7 +44,7 @@ type ResourceManagerSpec struct {
 	// TODO: add validation + enum
 	Action string `json:"action"`
 
-	Condition []ExpiryCondition `json:"condition"`
+	Condition ExpiryCondition `json:"condition"`
 }
 
 type Condition struct {
