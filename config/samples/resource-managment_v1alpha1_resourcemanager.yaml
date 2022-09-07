@@ -5,14 +5,13 @@ metadata:
 spec:
   disabled: false
   dry-run: false
-  resource:
-    kind: "Namespace"
-    selector:
-      matchLabels:
-        component: redis
-      matchExpressions:
-        - { key: tier, operator: In, values: [ cache ] }
-        - { key: environment, operator: NotIn, values: [ dev, dev2 ] }
+  resourceKind: "Namespace"
+  selector:
+    matchLabels:
+      component: redis
+    matchExpressions:
+      - { key: tier, operator: In, values: [ cache ] }
+      - { key: environment, operator: NotIn, values: [ dev, dev2 ] }
 #    namespaceSelector:
 #      matchLabels:
 #        component: redis

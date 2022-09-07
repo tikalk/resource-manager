@@ -24,7 +24,7 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 type ResourceSelector struct {
-	Kind     string                `json:"kind"`
+	Kind     string                `json:"resourceKind"`
 	Selector *metav1.LabelSelector `json:"selector"`
 	//NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector"`
 }
@@ -37,7 +37,7 @@ type ResourceManagerSpec struct {
 	Disabled bool `json:"disabled,omitempty"`
 	DryRun   bool `json:"dry-run,omitempty"`
 
-	ManagedResource ResourceSelector `json:"resource"`
+	ManagedResource ResourceSelector `json:",inline"`
 
 	// TODO: add validation + enum
 	Action string `json:"action"`
