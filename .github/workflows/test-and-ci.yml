@@ -1,10 +1,6 @@
 name: Testing and CI to github registry.
 
 on:
-  # push:
-  #   branches:
-  #     - main
-    #  - docker-build   ## should be Enable only when testing CI workflow changes and there's not PR.
   pull_request:
     branches: 
       - main
@@ -34,6 +30,7 @@ jobs:
 
     - name: Build docker image
       run: docker build --target release -t ghcr.io/${{ github.repository_owner }}/resource-manager:${{ github.sha }} .
+      if: github.event_name == 'push'
 
     - name: Log in to Github Container registry
       uses: docker/login-action@v2
