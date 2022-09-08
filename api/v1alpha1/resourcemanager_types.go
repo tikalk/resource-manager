@@ -38,27 +38,28 @@ type ResourceManagerSpec struct {
 	// TODO: add validation + enum
 	Action string `json:"action"`
 
-	Condition []Conditions `json:"condition"`
-}
-
-type Conditions struct {
-	ExpiryCondition
-	IntervalCondition
-	Condition
+	Condition []Condition `json:"condition"`
 }
 
 type Condition struct {
+	ExpiryCondition    `json:",inline,omitempty"`
+	TimeframeCondition `json:",inline,omitempty"`
+	BaseCondition      `json:",inline"`
+}
+
+type BaseCondition struct {
 	Type string `json:"type"`
 }
 
 type ExpiryCondition struct {
-	Condition `json:",inline"`
-	After     string `json:"after"`
+	BaseCondition `json:",inline"`
+	After         string `json:"after,omitempty"`
 }
 
-type IntervalCondition struct {
-	Condition `json:",inline"`
-	Timeframe string `json:"hour"`
+type TimeframeCondition struct {
+	BaseCondition `json:",inline"`
+	Timeframe     string `json:"time, omitempty"`
+	//Timezone  string `json:"timeZone"`
 }
 
 // ResourceManagerStatus defines the observed state of ResourceManager

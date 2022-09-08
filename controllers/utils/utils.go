@@ -20,22 +20,22 @@ func IsObjExpired(creation v1.Time, expiration string) (bool, int) {
 
 func IsIntervalOccurred(timeframe string) (error, bool) {
 
-	// current hour in 15:04 format
-	currentHour := time.Now().Format("15:04")
-
-	// parse timeframe to real time object
+	// parse timeframe to time object
 	timeframeTime, err := time.Parse("15:04", timeframe)
-	// current hour in the same time format
-	nowTime, err := time.Parse("15:04", currentHour)
+	if err != nil {
+		fmt.Println("Could not parse timeframe:", err)
+		return err, false
+	}
+
+	// current hour in the same time format "15:04"
+	nowTime, err := time.Parse("15:04", time.Now().Format("15:04"))
 	if err != nil {
 		fmt.Println("Could not parse time:", err)
 		return err, false
 	}
-	fmt.Println(fmt.Sprintf("The time now is: %s", nowTime))
-	fmt.Println(fmt.Sprintf("The timeframe is: %s", timeframeTime))
-	secondsUntilInterval := timeframeTime.Sub(nowTime).Seconds()
-	fmt.Println(fmt.Sprintf("secondsUntilInterval: %d", int(secondsUntilInterval)))
-	if secondsUntilInterval <= 0 {
+
+	secondsUntilTimeframe := timeframeTime.Sub(nowTime).Seconds()
+	if secondsUntilTimeframe <= 0 && secondsUntilTimeframe > -60 {
 		fmt.Println(fmt.Sprintf("timeframe triggerd: '%s'", timeframeTime))
 		return nil, true
 	}

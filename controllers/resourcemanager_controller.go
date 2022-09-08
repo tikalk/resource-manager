@@ -19,8 +19,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"github.com/tikalk/resource-manager/api/v1alpha1"
 	"github.com/tikalk/resource-manager/controllers/handlers"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -106,8 +104,6 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		h.Spec.Condition[0].After,
 		h.Spec.Condition[0].Type))
 
-	l.Info("I'm on collection deletion block")
-
 	// check if resource exists in our collection, if so, delete
 	if _, ok := collection[h.Name]; ok {
 		l.Info(fmt.Sprintf("Stopping loop for %s\n", h.Name))
@@ -116,36 +112,30 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		delete(collection, h.Name)
 	}
 
-	switch h.Spec.Resources {
-	case "namespace":
-		l.Info("I'm on NAMESPACE block")
-
-		// add the function and its stop-channel to collection
-		collection[h.Name] = FHandler{
-			F: func(stop chan bool) {
-				for {
-					select {
-					case <-stop:
-						l.Info(fmt.Sprintf("%s Got stop signal!\n", h.Name))
-						return
-					default:
-						l.Info("I'm on Default block")
-
+	// create new collection
+	collection[h.Name] = FHandler{
+		F: func(stop chan bool) {
+			for {
+				select {
+				case <-stop:
+					l.Info(fmt.Sprintf("%s Got stop signal!\n", h.Name))
+					return
+				default:
+					switch h.Spec.Resources { // here we decide which handler to use
+					case "namespace":
 						h.HandleNamespaceObj()
-						time.Sleep(5 * time.Second)
 					}
 				}
-			},
-			Stop: make(chan bool),
-		}
-
-		// export to new var
-		c := collection[h.Name]
-
-		// execute in a new thread
-		go c.F(c.Stop)
-
+			}
+		},
+		Stop: make(chan bool),
 	}
+
+	// export to new var
+	c := collection[h.Name]
+
+	// execute in a new thread
+	go c.F(c.Stop)
 
 	return ctrl.Result{}, nil
 }
