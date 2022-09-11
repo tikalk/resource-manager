@@ -19,11 +19,13 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
 	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	"runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -33,7 +35,7 @@ import (
 // ResourceManagerReconciler reconciles a ResourceManager object
 type ResourceManagerReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme *k8sruntime.Scheme
 }
 
 //+kubebuilder:rbac:groups=resource-management.tikalk.com,resources=resourcemanagers,verbs=get;list;watch;create;update;patch;delete
@@ -58,12 +60,10 @@ var collection map[types.NamespacedName]chan struct{}
 var clientset *kubernetes.Clientset
 
 type HandlerParams struct {
-	ctx       context.Context
 	stopper   chan struct{}
-	spec      resourcemanagmentv1alpha1.ResourceManagerSpec
+	mgrSpec   resourcemanagmentv1alpha1.ResourceManagerSpec
 	name      string
 	namespace string
-	clientset *kubernetes.Clientset
 }
 
 func handlerFactory(resourceKind string) (func(HandlerParams), error) {
@@ -74,13 +74,21 @@ func handlerFactory(resourceKind string) (func(HandlerParams), error) {
 	default:
 		return nil, fmt.Errorf("unexpected resourceKind <%s>", resourceKind)
 	}
+
 }
+
+var l logr.Logger
+var loggerInitialized bool
 
 func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
-	l := log.FromContext(ctx)
+	if !loggerInitialized {
+		l = log.FromContext(ctx)
+		loggerInitialized = true
+	}
+
 	//name := req.NamespacedName.String()
-	l.Info(fmt.Sprintf("ResourceManager object %s reconciled. Reconciling...", req.NamespacedName))
+	l.Info(trace(fmt.Sprintf("ResourceManager object %s reconciled. Reconciling...", req.NamespacedName)))
 
 	// your logic here
 	resourceManager := &resourcemanagmentv1alpha1.ResourceManager{}
@@ -94,11 +102,9 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 
 		l.Error(err, fmt.Sprintf("Failed reconcile obj %s", req.NamespacedName))
+		return ctrl.Result{}, nil
 	}
 
-	//fmt.Printf("found ResourceManager object: %s \n", resourceManager.Name)
-
-	// check if resource exists in our collection, if so, delete
 	if _, ok := collection[req.NamespacedName]; ok {
 		l.Info(fmt.Sprintf("ResourceManager %s changed. Recreating...", req.NamespacedName))
 		close(collection[req.NamespacedName])
@@ -115,21 +121,13 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			l.Error(err, fmt.Sprintf("Failed to creatate handler for <%s>", req.NamespacedName))
 		} else {
 			l.Info(fmt.Sprintf("Starting handler %s for ...", req.NamespacedName))
-			go handler(HandlerParams{ctx,
+			go handler(HandlerParams{
 				collection[req.NamespacedName],
 				resourceManager.Spec,
 				req.NamespacedName.String(),
-				req.NamespacedName.Namespace,
-				clientset})
+				req.NamespacedName.Namespace})
 		}
 	}
-
-	//
-	//deploy := &appsv1.DeploymentList{}
-	//err = r.Client.List(ctx, deploy, &client.ListOptions{})
-	//fmt.Printf("There are %d deployments in the cluster\n", len(deploy.Items))
-	//
-	//l.Info(fmt.Sprintf("Done reconcile 12-- obj %s", name))
 
 	return ctrl.Result{}, nil
 }
@@ -150,4 +148,18 @@ func (r *ResourceManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&resourcemanagmentv1alpha1.ResourceManager{}).
 		Complete(r)
+}
+
+func trace(msg string) string {
+	pc, file, line, ok := runtime.Caller(1)
+	if !ok {
+		return fmt.Sprintf("%s:%d %s | %s", "?", 0, "?", msg)
+	}
+
+	fn := runtime.FuncForPC(pc)
+	if fn == nil {
+		return fmt.Sprintf("%s:%d %s | %s", file, line, "?", msg)
+	}
+
+	return fmt.Sprintf("%s:%d %s | %s", file, line, fn.Name(), msg)
 }
