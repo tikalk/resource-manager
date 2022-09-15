@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/tikalk/resource-manager/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
@@ -8,6 +10,7 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/cache"
 	"time"
+	//"errors"
 )
 
 //+kubebuilder:rbac:groups=*,resources=namespaces,verbs=get;list;watch;update;patch;delete
@@ -21,20 +24,39 @@ func namespaceActionHandler(stopper chan struct{}, managedObj *v1.Namespace, mgr
 	var wait time.Duration
 	//var duration Duration
 	//var age Duration
-	switch mgrSpec.Condition.Type {
-	case "expiry":
-		duration, _ := time.ParseDuration(mgrSpec.Condition.After)
+	if mgrSpec.Condition.Timeframe != "" {
+		timeframe, _ := time.ParseDuration(mgrSpec.Condition.Timeframe)
 		age := time.Now().Sub(managedObj.ObjectMeta.CreationTimestamp.Time)
-		wait = duration - age
+		wait = timeframe - age
 
-		l.Info(trace(fmt.Sprintf("object expired <%s> duration <%s> age <%s> wait <%s>",
+		l.Info(trace(fmt.Sprintf("object timeframe expiration <%s> timaframe <%s> age <%s> wait <%s>",
 			managedObj.Name,
-			duration.String(),
+			timeframe.String(),
 			age.String(),
 			wait.String())))
-		break
-	case "at":
-		break
+	} else if mgrSpec.Condition.ExpireAt != "" {
+		expireAt, err := time.Parse("15:04", mgrSpec.Condition.ExpireAt)
+		if err != nil {
+			l.Error(err, fmt.Sprintf("Failed to parse %s", mgrSpec.Condition.ExpireAt))
+		}
+
+		now := time.Now()
+
+		if expireAt.Hour()*60+expireAt.Minute() > now.Hour()*60+now.Minute() {
+			wait = time.Date(now.Year(), now.Month(), now.Day(), expireAt.Hour(), expireAt.Minute(), 0, 0, now.Location()).Sub(now)
+		} else {
+			tomorrow := now.Add(24 * time.Hour)
+			wait = time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), expireAt.Hour(), expireAt.Minute(), 0, 0, tomorrow.Location()).Sub(now)
+		}
+
+		l.Info(trace(fmt.Sprintf("object time expiration <%s> expireAt <%s> now <%s> wait <%s>",
+			managedObj.Name,
+			expireAt.String(),
+			now.String(),
+			wait)))
+	} else {
+		l.Error(errors.New("expiration is not configured"), trace(fmt.Sprintf("object hanler <%s> aborted", managedObj.Name)))
+		return
 	}
 
 	if wait <= 0 {
@@ -54,9 +76,29 @@ func namespaceActionHandler(stopper chan struct{}, managedObj *v1.Namespace, mgr
 		l.Info(trace(fmt.Sprintf("dry-run performing object <%s> action <%s> ", managedObj.Name, mgrSpec.Action)))
 	} else {
 		l.Info(trace(fmt.Sprintf("performing object <%s> action <%s> ", managedObj.Name, mgrSpec.Action)))
+		var err error
+		switch mgrSpec.Action {
+		case "delete":
+			err = namespaceDelete(managedObj.Name)
+			break
+		default:
+			err = errors.New("unexpected action")
+		}
+		if err != nil {
+			l.Error(err, trace(fmt.Sprintf("object <%s> action <%s> failed", managedObj.Name, mgrSpec.Action)))
+		} else {
+			l.Info(trace(fmt.Sprintf("object <%s> action <%s> finished", managedObj.Name, mgrSpec.Action)))
+		}
+
 	}
 
 	l.Info(trace(fmt.Sprintf("end <%s>", managedObj.Name)))
+}
+
+func namespaceDelete(objName string) error {
+	var opts metav1.DeleteOptions
+	ctx := context.TODO()
+	return clientset.CoreV1().Namespaces().Delete(ctx, objName, opts)
 }
 
 func HandleNamespace(p HandlerParams) {

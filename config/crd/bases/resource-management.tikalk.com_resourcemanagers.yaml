@@ -39,20 +39,17 @@ spec:
               action:
                 description: 'TODO: add validation + enum'
                 type: string
-              condition:
-                properties:
-                  after:
-                    type: string
-                  type:
-                    type: string
-                required:
-                - after
-                - type
-                type: object
               disabled:
                 type: boolean
               dry-run:
                 type: boolean
+              expiration:
+                properties:
+                  at:
+                    type: string
+                  timeframe:
+                    type: string
+                type: object
               resourceKind:
                 description: ManagedResource ResourceSelector `json:",inline"`
                 type: string
@@ -105,7 +102,7 @@ spec:
                 type: object
             required:
             - action
-            - condition
+            - expiration
             - resourceKind
             - selector
             type: object

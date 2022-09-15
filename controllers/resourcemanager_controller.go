@@ -78,13 +78,15 @@ func handlerFactory(resourceKind string) (func(HandlerParams), error) {
 }
 
 var l logr.Logger
-var loggerInitialized bool
+var ctx context.Context
+var initialized bool
 
-func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *ResourceManagerReconciler) Reconcile(ctx1 context.Context, req ctrl.Request) (ctrl.Result, error) {
 
-	if !loggerInitialized {
+	if !initialized {
 		l = log.FromContext(ctx)
-		loggerInitialized = true
+		ctx = ctx1
+		initialized = true
 	}
 
 	//name := req.NamespacedName.String()

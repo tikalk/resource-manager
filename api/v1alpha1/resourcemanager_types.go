@@ -23,12 +23,6 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-//type ResourceSelector struct {
-//	Kind     string                `json:"resourceKind"`
-//	Selector *metav1.LabelSelector `json:"selector"`
-//	//NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector"`
-//}
-
 // ResourceManagerSpec defines the desired state of ResourceManager
 type ResourceManagerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -44,21 +38,13 @@ type ResourceManagerSpec struct {
 	// TODO: add validation + enum
 	Action string `json:"action"`
 
-	Condition ExpiryCondition `json:"condition"`
+	Condition Expiration `json:"expiration"`
 }
 
-type Condition struct {
-	Type string `json:"type"`
+type Expiration struct {
+	ExpireAt  string `json:"at,omitempty"`
+	Timeframe string `json:"timeframe,omitempty"`
 }
-
-type ExpiryCondition struct {
-	Condition `json:",inline"`
-	After     string `json:"after"`
-}
-
-// type IntervalCondition struct {
-// 	Condition
-// }
 
 // ResourceManagerStatus defines the observed state of ResourceManager
 type ResourceManagerStatus struct {
