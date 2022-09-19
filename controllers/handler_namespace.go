@@ -19,7 +19,7 @@ import (
 
 func namespaceActionHandler(stopper chan struct{}, managedObj *v1.Namespace, mgrSpec v1alpha1.ResourceManagerSpec) {
 
-	l.Info(fmt.Sprintf("namespaceActionHandler begin <%s>", managedObj.Name))
+	//l.Info(fmt.Sprintf("namespaceActionHandler begin <%s>", managedObj.Name))
 
 	var wait time.Duration
 	//var duration Duration
@@ -29,7 +29,7 @@ func namespaceActionHandler(stopper chan struct{}, managedObj *v1.Namespace, mgr
 		age := time.Now().Sub(managedObj.ObjectMeta.CreationTimestamp.Time)
 		wait = timeframe - age
 
-		l.Info(trace(fmt.Sprintf("object timeframe expiration <%s> timaframe <%s> age <%s> wait <%s>",
+		l.Info(trace(fmt.Sprintf("object timeframe expiration <%s> timeframe <%s> age <%s> wait <%s>",
 			managedObj.Name,
 			timeframe.String(),
 			age.String(),
@@ -92,7 +92,7 @@ func namespaceActionHandler(stopper chan struct{}, managedObj *v1.Namespace, mgr
 
 	}
 
-	l.Info(trace(fmt.Sprintf("end <%s>", managedObj.Name)))
+	//l.Info(trace(fmt.Sprintf("end <%s>", managedObj.Name)))
 }
 
 func namespaceDelete(objName string) error {
@@ -120,28 +120,37 @@ func HandleNamespace(p HandlerParams) {
 		AddFunc: func(obj interface{}) {
 			//fmt.Println("namespace add")
 			name := obj.(*v1.Namespace).Name
-			l.Info(trace(fmt.Sprintf("Namespace added: <%s> Created at <%s>", name, obj.(*v1.Namespace).ObjectMeta.CreationTimestamp.String())))
 			stopper := make(chan struct{})
 			collection[name] = stopper
-			go namespaceActionHandler(stopper, obj.(*v1.Namespace), p.mgrSpec)
+			if obj.(*v1.Namespace).Status.Phase == "Terminating" {
+				l.Info(trace(fmt.Sprintf("Namespace add ignored: <%s> Status <%s>", name, obj.(*v1.Namespace).Status.Phase)))
+			} else {
+				l.Info(trace(fmt.Sprintf("Namespace added: <%s> Created at <%s>", name, obj.(*v1.Namespace).ObjectMeta.CreationTimestamp.String())))
+				go namespaceActionHandler(stopper, obj.(*v1.Namespace), p.mgrSpec)
+			}
+
 		},
 
 		UpdateFunc: func(oldObj interface{}, obj interface{}) {
 			//fmt.Println("namespace add")
 			name := obj.(*v1.Namespace).Name
-			l.Info(trace(fmt.Sprintf("Namespace updated: %s", name)))
 			close(collection[name])
 			delete(collection, name)
 			stopper := make(chan struct{})
 			collection[name] = stopper
-			go namespaceActionHandler(stopper, obj.(*v1.Namespace), p.mgrSpec)
+			if obj.(*v1.Namespace).Status.Phase == "Terminating" {
+				l.Info(trace(fmt.Sprintf("Namespace update ignored: <%s> Status <%s>", name, obj.(*v1.Namespace).Status.Phase)))
+			} else {
+				l.Info(trace(fmt.Sprintf("Namespace updated: %s", name)))
+				go namespaceActionHandler(stopper, obj.(*v1.Namespace), p.mgrSpec)
+			}
 		},
 
 		DeleteFunc: func(obj interface{}) {
 			//fmt.Println("namespace add")
 			name := obj.(*v1.Namespace).Name
-			labels := obj.(*v1.Namespace).Labels
-			l.Info(trace(fmt.Sprintf("Namespace deleted: %s\nLabels - %v\n\n", name, labels)))
+			//labels := obj.(*v1.Namespace).Labels
+			l.Info(trace(fmt.Sprintf("Namespace deleted: <%s>", name)))
 			close(collection[name])
 			delete(collection, name)
 		},

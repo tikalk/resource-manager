@@ -21,15 +21,25 @@ import (
 	"fmt"
 	"github.com/go-logr/logr"
 	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/api/errors"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	"os"
 	"runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"time"
+
+	zaplogfmt "github.com/sykesm/zap-logfmt"
+	uzap "go.uber.org/zap"
+	//"go.uber.org/zap/zapcore"
+	//logf "sigs.k8s.io/controller-runtime/pkg/log"
+	//"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 // ResourceManagerReconciler reconciles a ResourceManager object
@@ -84,7 +94,17 @@ var initialized bool
 func (r *ResourceManagerReconciler) Reconcile(ctx1 context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	if !initialized {
-		l = log.FromContext(ctx)
+
+		configLog := uzap.NewProductionEncoderConfig()
+		configLog.EncodeTime = func(ts time.Time, encoder zapcore.PrimitiveArrayEncoder) {
+			encoder.AppendString(ts.UTC().Format(time.RFC3339Nano))
+		}
+		logfmtEncoder := zaplogfmt.NewEncoder(configLog)
+		// Construct a new logr.logger.
+		l = zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout), zap.Encoder(logfmtEncoder))
+		log.SetLogger(l)
+
+		//l = log.FromContext(ctx1)
 		ctx = ctx1
 		initialized = true
 	}
@@ -122,7 +142,7 @@ func (r *ResourceManagerReconciler) Reconcile(ctx1 context.Context, req ctrl.Req
 		if err != nil {
 			l.Error(err, fmt.Sprintf("Failed to creatate handler for <%s>", req.NamespacedName))
 		} else {
-			l.Info(fmt.Sprintf("Starting handler %s for ...", req.NamespacedName))
+			l.Info(fmt.Sprintf("Starting handler for <%s>", req.NamespacedName))
 			go handler(HandlerParams{
 				collection[req.NamespacedName],
 				resourceManager.Spec,
