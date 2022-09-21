@@ -105,15 +105,24 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
+	// clean previous handlers
 	r.removeHandler(req.NamespacedName)
 
+	// do nothing if object disabled
 	if resourceManager.Spec.Disabled {
 		return ctrl.Result{}, nil
 	}
 
-	// collection[req.NamespacedName] = make(chan struct{})
-	handler := handlers.NewResourceManagerHandler(resourceManager, r.clientset)
+	handler, err := handlers.NewResourceManagerHandler(resourceManager, r.clientset)
+	if err != nil {
+		r.l.Error(err, fmt.Sprintf("Failed to create an ResourceManagerHandler for %s, error was '%s'.", req.NamespacedName, err))
+		return ctrl.Result{}, nil
+	}
+
+	// add handler to collection
 	r.addHandler(req.NamespacedName, handler)
+
+	// start the handler
 	go handler.Start()
 
 	return ctrl.Result{}, nil

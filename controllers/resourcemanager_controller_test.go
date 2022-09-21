@@ -2,12 +2,13 @@ package controllers
 
 import (
 	"context"
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 
 	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
 )
@@ -24,21 +25,18 @@ var _ = Context("Inside of a ResourceManager", func() {
 					Namespace: "default",
 				},
 				Spec: resourcemanagmentv1alpha1.ResourceManagerSpec{
-					Active:    true,
-					DryRun:    false,
-					Resources: "namespace",
+					Disabled:     false,
+					DryRun:       false,
+					ResourceKind: "Namespace",
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"name": "managed-namespace",
 						},
 					},
 					Action: "delete",
-					Condition: []resourcemanagmentv1alpha1.ExpiryCondition{{
-						Condition: resourcemanagmentv1alpha1.Condition{
-							Type: "expiry",
-						},
-						After: "1s",
-					}},
+					Condition: resourcemanagmentv1alpha1.Expiration{
+						Timeframe: "1s",
+					},
 				},
 			}
 
@@ -54,7 +52,7 @@ var _ = Context("Inside of a ResourceManager", func() {
 				time.Second*5, time.Millisecond*500).Should(BeNil())
 
 			Expect(rmObj.Spec.Action).To(Equal("delete"))
-			Expect(rmObj.Spec.Condition[0].After).To(Equal("1s"))
+			Expect(rmObj.Spec.Condition.Timeframe).To(Equal("1s"))
 
 			// create namespace obj
 			myNamespaceObj := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{
