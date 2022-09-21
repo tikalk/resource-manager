@@ -12,39 +12,56 @@ import (
 
 type ResourceManagerHandler struct {
 	informer    cache.SharedIndexInformer
+	factory     informers.SharedInformerFactory
 	clientset   *kubernetes.Clientset
 	resource    *v1alpha1.ResourceManager
 	objHandlers map[string]*ObjectHandler
 }
 
-func NewResourceManagerHandler(r *v1alpha1.ResourceManager) *ResourceManagerHandler {
-	// more logic
+func NewResourceManagerHandler(res *v1alpha1.ResourceManager, clientset *kubernetes.Clientset) *ResourceManagerHandler {
+
+	selector, _ := metav1.LabelSelectorAsSelector(res.Spec.Selector)
+	labelOptions := informers.WithTweakListOptions(func(opts *metav1.ListOptions) {
+		opts.LabelSelector = selector.String()
+	})
+	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0 /*informers.WithNamespace(p.namespace),*/, labelOptions)
 
 	return &ResourceManagerHandler{
-		resource:    r,
+		resource:    res,
+		factory:     factory,
+		clientset:   clientset,
 		objHandlers: make(map[string]*ObjectHandler),
 	}
 }
 
+func (r *ResourceManagerHandler) getInformer(kind string) (i cache.SharedIndexInformer) {
+	switch kind {
+	case "Deployment":
+		i = r.factory.Apps().V1().Deployments().Informer()
+	case "Namespace":
+		i = r.factory.Core().V1().Namespaces().Informer()
+	}
+	return i
+}
+
 func (r *ResourceManagerHandler) Start() error {
 
-	// collection := make(map[string]chan struct{})
 	// create informer
-	selector, _ := metav1.LabelSelectorAsSelector(r.resource.Spec.Selector)
+	r.informer = r.getInformer(r.resource.Spec.ResourceKind)
 
-	labelOptions := informers.WithTweakListOptions(func(opts *metav1.ListOptions) {
-		opts.LabelSelector = selector.String()
-	})
-	factory := informers.NewSharedInformerFactoryWithOptions(r.clientset, 0 /*informers.WithNamespace(p.namespace),*/, labelOptions)
-	r.informer = factory.Core().V1().Namespaces().Informer()
+	// TODO: listen to events
+	// r.informer.AddEventHandler()
 
-	// listen to events
 	// create objectHandler
 	// ...
 }
 
 func (r *ResourceManagerHandler) Stop() error {
 	// stop channel
+}
+
+func (r *ResourceManagerHandler) AddFunc() error {
+
 }
 
 type ObjectHandler struct {

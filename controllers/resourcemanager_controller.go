@@ -112,7 +112,7 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	// collection[req.NamespacedName] = make(chan struct{})
-	handler := handlers.NewResourceManagerHandler(resourceManager)
+	handler := handlers.NewResourceManagerHandler(resourceManager, r.clientset)
 	r.addHandler(req.NamespacedName, handler)
 	go handler.Start()
 
