@@ -1,10 +1,9 @@
-package handlers
+package controllers
 
 import (
 	"fmt"
 	"github.com/go-logr/logr"
 	v1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
-	"github.com/tikalk/resource-manager/controllers"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/cache"
 
@@ -82,10 +81,10 @@ func (resourceManagerHandler *ResourceManagerHandler) Run() error {
 				return
 			}
 			if objHandler.terminating {
-				resourceManagerHandler.log.Info(controllers.trace(fmt.Sprintf("Object adding ignored: <%s> Terminating <%b>", objHandler.fullname, objHandler.terminating)))
+				resourceManagerHandler.log.Info(trace(fmt.Sprintf("Object adding ignored: <%s> Terminating <%b>", objHandler.fullname, objHandler.terminating)))
 				return
 			}
-			resourceManagerHandler.log.Info(controllers.trace(fmt.Sprintf("Adding object handler: <%s>", objHandler.fullname)))
+			resourceManagerHandler.log.Info(trace(fmt.Sprintf("Adding object handler: <%s>", objHandler.fullname)))
 			resourceManagerHandler.addObjHandelr(objHandler)
 			go objHandler.Run()
 			// TODO: handle terminating state  - obj.(*v1.Namespace).Status.Phase == "Terminating"
@@ -97,10 +96,10 @@ func (resourceManagerHandler *ResourceManagerHandler) Run() error {
 				return
 			}
 			if objHandler.terminating {
-				resourceManagerHandler.log.Info(controllers.trace(fmt.Sprintf("Object recreating ignored: <%s> Terminating <%b>", objHandler.fullname, objHandler.terminating)))
+				resourceManagerHandler.log.Info(trace(fmt.Sprintf("Object recreating ignored: <%s> Terminating <%b>", objHandler.fullname, objHandler.terminating)))
 				return
 			}
-			resourceManagerHandler.log.Info(controllers.trace(fmt.Sprintf("Recreating object handler: <%s>", objHandler.fullname)))
+			resourceManagerHandler.log.Info(trace(fmt.Sprintf("Recreating object handler: <%s>", objHandler.fullname)))
 			resourceManagerHandler.removeObjHandelr(objHandler.fullname)
 			resourceManagerHandler.addObjHandelr(objHandler)
 			go objHandler.Run()
@@ -111,7 +110,7 @@ func (resourceManagerHandler *ResourceManagerHandler) Run() error {
 				resourceManagerHandler.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))
 				return
 			}
-			resourceManagerHandler.log.Info(controllers.trace(fmt.Sprintf("Deleting object handler: <%s>", objHandler.fullname)))
+			resourceManagerHandler.log.Info(trace(fmt.Sprintf("Deleting object handler: <%s>", objHandler.fullname)))
 			resourceManagerHandler.removeObjHandelr(objHandler.fullname)
 		},
 	})

@@ -19,7 +19,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/tikalk/resource-manager/pkg/handlers"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"os"
 	"runtime"
@@ -56,19 +55,19 @@ import (
 type ResourceManagerReconciler struct {
 	client.Client
 	Scheme                            *k8sruntime.Scheme
-	collectionResourceManagerHandlers map[types.NamespacedName]*handlers.ResourceManagerHandler
+	collectionResourceManagerHandlers map[types.NamespacedName]*ResourceManagerHandler
 
 	clientset *kubernetes.Clientset
 	log       logr.Logger
 }
 
-func (resourceManagerReconciler *ResourceManagerReconciler) registerAndRunResourceManagerHandler(resourceManagerName types.NamespacedName, resourceManagerHandler *handlers.ResourceManagerHandler) {
+func (resourceManagerReconciler *ResourceManagerReconciler) registerAndRunResourceManagerHandler(resourceManagerName types.NamespacedName, resourceManagerHandler *ResourceManagerHandler) {
 	resourceManagerReconciler.collectionResourceManagerHandlers[resourceManagerName] = resourceManagerHandler
 	go resourceManagerHandler.Run()
 
 }
 
-func (resourceManagerReconciler *ResourceManagerReconciler) findResourceManagerHandler(resourceManagerName types.NamespacedName) *handlers.ResourceManagerHandler {
+func (resourceManagerReconciler *ResourceManagerReconciler) findResourceManagerHandler(resourceManagerName types.NamespacedName) *ResourceManagerHandler {
 	return resourceManagerReconciler.collectionResourceManagerHandlers[resourceManagerName]
 }
 
@@ -129,7 +128,7 @@ func (resourceManagerReconciler *ResourceManagerReconciler) Reconcile(ctx1 conte
 	}
 
 	resourceManagerReconciler.log.Info(trace(fmt.Sprintf("ResourceManager object added <%s>. Handler creating...", req.NamespacedName)))
-	resourceManagerHandler, err := handlers.NewResourceManagerHandler(resourceManager, resourceManagerReconciler.clientset, resourceManagerReconciler.log)
+	resourceManagerHandler, err := NewResourceManagerHandler(resourceManager, resourceManagerReconciler.clientset, resourceManagerReconciler.log)
 	if err != nil {
 		resourceManagerReconciler.log.Error(err, fmt.Sprintf("ResourceManagerHandler object %s handler creating failed with error <%s>.", req.NamespacedName, err))
 		return ctrl.Result{}, nil
@@ -160,7 +159,7 @@ func (resourceManagerReconciler *ResourceManagerReconciler) SetupWithManager(mgr
 		panic(err.Error())
 	}
 
-	resourceManagerReconciler.collectionResourceManagerHandlers = make(map[types.NamespacedName]*handlers.ResourceManagerHandler)
+	resourceManagerReconciler.collectionResourceManagerHandlers = make(map[types.NamespacedName]*ResourceManagerHandler)
 
 	resourceManagerReconciler.clientset, err = kubernetes.NewForConfig(cfg)
 	if err != nil {
