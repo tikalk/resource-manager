@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"fmt"
-
+	"github.com/go-logr/logr"
 	v1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
+	"github.com/tikalk/resource-manager/controllers"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/cache"
 
@@ -14,33 +15,36 @@ import (
 )
 
 type ResourceManagerHandler struct {
-	informer        cache.SharedIndexInformer
-	factory         informers.SharedInformerFactory
-	clientset       *kubernetes.Clientset
 	resourceManager *v1alpha1.ResourceManager
-	objHandlers     map[types.NamespacedName]*ObjectHandler
+	informer        cache.SharedIndexInformer
+	//factory         informers.SharedInformerFactory
+	objHandlers map[types.NamespacedName]*ObjectHandler
 
-	stopper chan struct{}
+	stopper   chan struct{}
+	clientset *kubernetes.Clientset
+	log       logr.Logger
 }
 
-func NewResourceManagerHandler(res *v1alpha1.ResourceManager, clientset *kubernetes.Clientset) (*ResourceManagerHandler, error) {
-	selector, _ := metav1.LabelSelectorAsSelector(res.Spec.Selector)
+func NewResourceManagerHandler(resourceManager *v1alpha1.ResourceManager, clientset *kubernetes.Clientset, log logr.Logger) (*ResourceManagerHandler, error) {
+	selector, _ := metav1.LabelSelectorAsSelector(resourceManager.Spec.Selector)
 	labelOptions := informers.WithTweakListOptions(func(opts *metav1.ListOptions) {
 		opts.LabelSelector = selector.String()
 	})
-	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0 /*informers.WithNamespace(p.namespace),*/, labelOptions)
+	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(resourceManager.Namespace), labelOptions)
 
-	i, err := createInformer(factory, res.Spec.ResourceKind)
+	informer, err := createInformer(factory, resourceManager.Spec.ResourceKind)
 	if err != nil {
 		return nil, err
 	}
 
 	return &ResourceManagerHandler{
-		resourceManager: res,
-		factory:         factory,
-		informer:        i,
-		clientset:       clientset,
-		objHandlers:     make(map[types.NamespacedName]*ObjectHandler),
+		resourceManager: resourceManager,
+		informer:        informer,
+		//factory:         factory,
+		objHandlers: make(map[types.NamespacedName]*ObjectHandler),
+		stopper:     make(chan struct{}),
+		clientset:   clientset,
+		log:         log,
 	}, nil
 }
 
@@ -56,50 +60,73 @@ func createInformer(factory informers.SharedInformerFactory, kind string) (infor
 	return informer, err
 }
 
-func (r *ResourceManagerHandler) addObjHandelr(fullname types.NamespacedName, objHandler *ObjectHandler) {
-	r.objHandlers[fullname] = objHandler
+func (resourceManagerHandler *ResourceManagerHandler) addObjHandelr(objHandler *ObjectHandler) {
+	resourceManagerHandler.objHandlers[objHandler.fullname] = objHandler
 }
 
-func (r *ResourceManagerHandler) removeObjHandelr(fullname types.NamespacedName) {
-	if _, ok := r.objHandlers[fullname]; ok {
-		r.objHandlers[fullname].Stop()
-		delete(r.objHandlers, fullname)
+func (resourceManagerHandler *ResourceManagerHandler) removeObjHandelr(fullname types.NamespacedName) {
+	if _, ok := resourceManagerHandler.objHandlers[fullname]; ok {
+		resourceManagerHandler.objHandlers[fullname].Stop()
+		delete(resourceManagerHandler.objHandlers, fullname)
 	}
 }
 
-func (r *ResourceManagerHandler) Start() error {
+func (resourceManagerHandler *ResourceManagerHandler) Run() error {
 
 	// TODO: listen to events
-	r.informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	resourceManagerHandler.informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			objHandler, fullname, _ := NewObjectHandler(r.resourceManager, obj)
-			r.addObjHandelr(fullname, objHandler)
+			objHandler, err := NewObjectHandler(resourceManagerHandler.resourceManager, obj, resourceManagerHandler.clientset, resourceManagerHandler.log)
+			if err != nil {
+				resourceManagerHandler.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))
+				return
+			}
+			if objHandler.terminating {
+				resourceManagerHandler.log.Info(controllers.trace(fmt.Sprintf("Object adding ignored: <%s> Terminating <%b>", objHandler.fullname, objHandler.terminating)))
+				return
+			}
+			resourceManagerHandler.log.Info(controllers.trace(fmt.Sprintf("Adding object handler: <%s>", objHandler.fullname)))
+			resourceManagerHandler.addObjHandelr(objHandler)
 			go objHandler.Run()
 			// TODO: handle terminating state  - obj.(*v1.Namespace).Status.Phase == "Terminating"
 		},
 		UpdateFunc: func(oldObj interface{}, obj interface{}) {
-			objHandler, fullname, _ := NewObjectHandler(r.resourceManager, obj)
-			r.removeObjHandelr(fullname)
-			r.addObjHandelr(fullname, objHandler)
+			objHandler, err := NewObjectHandler(resourceManagerHandler.resourceManager, obj, resourceManagerHandler.clientset, resourceManagerHandler.log)
+			if err != nil {
+				resourceManagerHandler.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))
+				return
+			}
+			if objHandler.terminating {
+				resourceManagerHandler.log.Info(controllers.trace(fmt.Sprintf("Object recreating ignored: <%s> Terminating <%b>", objHandler.fullname, objHandler.terminating)))
+				return
+			}
+			resourceManagerHandler.log.Info(controllers.trace(fmt.Sprintf("Recreating object handler: <%s>", objHandler.fullname)))
+			resourceManagerHandler.removeObjHandelr(objHandler.fullname)
+			resourceManagerHandler.addObjHandelr(objHandler)
 			go objHandler.Run()
 		},
 		DeleteFunc: func(obj interface{}) {
-			_, fullname, _ := NewObjectHandler(r.resourceManager, obj)
-			r.removeObjHandelr(fullname)
+			objHandler, err := NewObjectHandler(resourceManagerHandler.resourceManager, obj, resourceManagerHandler.clientset, resourceManagerHandler.log)
+			if err != nil {
+				resourceManagerHandler.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))
+				return
+			}
+			resourceManagerHandler.log.Info(controllers.trace(fmt.Sprintf("Deleting object handler: <%s>", objHandler.fullname)))
+			resourceManagerHandler.removeObjHandelr(objHandler.fullname)
 		},
 	})
 	// start the informer
-	go r.informer.Run(r.stopper)
+	go resourceManagerHandler.informer.Run(resourceManagerHandler.stopper)
 
 	return nil
 }
 
-func (r *ResourceManagerHandler) Stop() {
+func (resourceManagerHandler *ResourceManagerHandler) Stop() {
 	// stop channel
-	close(r.stopper)
+	close(resourceManagerHandler.stopper)
 
 	// TODO: cleanup
-	for _, h := range r.objHandlers {
+	for _, h := range resourceManagerHandler.objHandlers {
 		h.Stop()
 	}
 }
