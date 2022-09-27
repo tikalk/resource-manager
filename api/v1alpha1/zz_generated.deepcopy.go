@@ -98,6 +98,11 @@ func (in *ResourceManagerSpec) DeepCopyInto(out *ResourceManagerSpec) {
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.NamespaceSelector != nil {
+		in, out := &in.NamespaceSelector, &out.NamespaceSelector
+		*out = new(v1.LabelSelector)
+		(*in).DeepCopyInto(*out)
+	}
 	out.Condition = in.Condition
 }
 

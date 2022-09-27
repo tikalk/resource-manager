@@ -109,7 +109,7 @@ func (objectHandler *ObjectHandler) performObjectDelete() (err error) {
 	case "Namespace":
 		err = objectHandler.clientset.CoreV1().Namespaces().Delete(ctx, objectHandler.fullname.Name, opts)
 	case "Deployment":
-		err = objectHandler.clientset.AppsV1().Deployments(objectHandler.resourceManager.Namespace).Delete(ctx, objectHandler.fullname.Name, opts)
+		err = objectHandler.clientset.AppsV1().Deployments(objectHandler.fullname.Namespace).Delete(ctx, objectHandler.fullname.Name, opts)
 	default:
 		err = fmt.Errorf("objectDelete: unxpected object kind <%s>", objectHandler.resourceManager.Spec.ResourceKind)
 	}

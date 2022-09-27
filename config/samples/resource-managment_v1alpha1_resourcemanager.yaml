@@ -2,6 +2,7 @@ apiVersion: resource-management.tikalk.com/v1alpha1
 kind: ResourceManager
 metadata:
   name: resource-manager-sample
+  namespace: default
 spec:
   disabled: false
   dry-run: false
@@ -12,12 +13,13 @@ spec:
     matchExpressions:
       - { key: tier, operator: In, values: [ cache ] }
       - { key: environment, operator: NotIn, values: [ dev, dev2 ] }
-#    namespaceSelector:
-#      matchLabels:
-#        component: redis
-#      matchExpressions:
-#        - { key: tier, operator: In, values: [ cache ] }
-#        - { key: environment, operator: NotIn, values: [ dev ] }
+#  namespaceSelector: {}
+#  namespaceSelector:
+#    matchLabels:
+#      component: redis
+#    matchExpressions:
+#      - { key: tier, operator: In, values: [ cache ] }
+#      - { key: environment, operator: NotIn, values: [ dev ] }
   action: delete
   expiration:
 #    at: 18:57

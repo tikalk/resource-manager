@@ -32,8 +32,9 @@ type ResourceManagerSpec struct {
 	DryRun   bool `json:"dry-run,omitempty"`
 
 	//ManagedResource ResourceSelector `json:",inline"`
-	ResourceKind string                `json:"resourceKind"`
-	Selector     *metav1.LabelSelector `json:"selector"`
+	ResourceKind      string                `json:"resourceKind"`
+	Selector          *metav1.LabelSelector `json:"selector"`
+	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
 	// TODO: add validation + enum
 	Action string `json:"action"`
