@@ -23,7 +23,7 @@ type ResourceManagerHandler struct {
 }
 
 func NewResourceManagerHandler(resourceManager *v1alpha1.ResourceManager, clientset *kubernetes.Clientset, log logr.Logger) (*ResourceManagerHandler, error) {
-	if resourceManager.Spec.NamespaceSelector.String() != "" {
+	if resourceManager.Spec.NamespaceSelector != nil {
 		selector, _ := metav1.LabelSelectorAsSelector(resourceManager.Spec.NamespaceSelector)
 		labelOptions := informers.WithTweakListOptions(func(opts *metav1.ListOptions) {
 			opts.LabelSelector = selector.String()

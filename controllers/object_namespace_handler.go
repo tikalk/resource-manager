@@ -12,6 +12,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+// Represents object namespace with managed objects
 type ObjectNamespaceHandler struct {
 	resourceManager *v1alpha1.ResourceManager
 	namespaceName   string
