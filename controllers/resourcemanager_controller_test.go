@@ -24,9 +24,9 @@ var _ = Context("Inside of a ResourceManager", func() {
 					Namespace: "default",
 				},
 				Spec: resourcemanagmentv1alpha1.ResourceManagerSpec{
-					Active:    true,
-					DryRun:    false,
-					Resources: "namespace",
+					Disabled:     false,
+					DryRun:       false,
+					ResourceKind: "Namespace",
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"name": "managed-namespace",
@@ -65,7 +65,7 @@ var _ = Context("Inside of a ResourceManager", func() {
 			},
 			}
 			err = k8sClient.Create(ctx, myNamespaceObj)
-			Expect(err).NotTo(HaveOccurred(), "failed to create test 'namespace' resource")
+			Expect(err).NotTo(HaveOccurred(), "failed to create test 'Namespace' resource")
 
 			// validate creation
 			nsObj, _ := getResourceByName(ctx, myNamespaceObj.Name)

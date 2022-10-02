@@ -3,9 +3,9 @@ kind: ResourceManager
 metadata:
   name: resource-manager-sample
 spec:
-  active: true
+  disabled: false
   dry-run: false
-  resources: "namespace"
+  resourceKind: "namespace"
   selector:
     matchLabels:
       name: managed-namespace1

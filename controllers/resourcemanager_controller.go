@@ -100,7 +100,7 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			" action: %s \n"+
 			" condition: %s \n"+
 			" type: %s \n",
-		h.Spec.Resources,
+		h.Spec.ResourceKind,
 		h.Spec.Selector.MatchLabels,
 		h.Spec.Action,
 		h.Spec.Condition[0].After,
@@ -114,7 +114,7 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		delete(collection, h.Name)
 	}
 
-	switch h.Spec.Resources {
+	switch h.Spec.ResourceKind {
 	case "namespace":
 		// add the function and its stop-channel to collection
 		collection[h.Name] = FHandler{
