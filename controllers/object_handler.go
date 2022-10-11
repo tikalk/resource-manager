@@ -97,6 +97,9 @@ func (objectHandler *ObjectHandler) performObjectAction() (err error) {
 	case "delete":
 		err = objectHandler.performObjectDelete()
 		break
+	case "patch":
+		err = objectHandler.performObjectPatch()
+		break
 	default:
 		err = errors.New(fmt.Sprintf("objectAction: unexpected action %s", objectHandler.resourceManager.Spec.Action))
 	}
@@ -110,6 +113,30 @@ func (objectHandler *ObjectHandler) performObjectDelete() (err error) {
 		err = objectHandler.clientset.CoreV1().Namespaces().Delete(ctx, objectHandler.fullname.Name, opts)
 	case "Deployment":
 		err = objectHandler.clientset.AppsV1().Deployments(objectHandler.fullname.Namespace).Delete(ctx, objectHandler.fullname.Name, opts)
+	default:
+		err = fmt.Errorf("objectDelete: unxpected object kind <%s>", objectHandler.resourceManager.Spec.ResourceKind)
+	}
+	return err
+}
+
+type patchUInt32Value struct {
+	Op    string `json:"op"`
+	Path  string `json:"path"`
+	Value uint32 `json:"value"`
+}
+
+func (objectHandler *ObjectHandler) performObjectPatch() (err error) {
+	//var pt types.PatchType
+
+	//data := fmt.Sprintf(`{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}`, time.Now().String())
+	var data string
+	data = objectHandler.resourceManager.Spec.ActionParam
+
+	switch objectHandler.resourceManager.Spec.ResourceKind {
+	case "Namespace":
+		_, err = objectHandler.clientset.CoreV1().Namespaces().Patch(ctx, objectHandler.fullname.Name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{FieldManager: "kubectl-rollout"})
+	case "Deployment":
+		_, err = objectHandler.clientset.AppsV1().Deployments(objectHandler.fullname.Namespace).Patch(ctx, objectHandler.fullname.Name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{FieldManager: "kubectl-rollout"})
 	default:
 		err = fmt.Errorf("objectDelete: unxpected object kind <%s>", objectHandler.resourceManager.Spec.ResourceKind)
 	}
@@ -135,7 +162,8 @@ func (objectHandler *ObjectHandler) Run() {
 	} else if objectHandler.resourceManager.Spec.Condition.ExpireAt != "" {
 		expireAt, err := time.Parse("15:04", objectHandler.resourceManager.Spec.Condition.ExpireAt)
 		if err != nil {
-			objectHandler.log.Error(err, fmt.Sprintf("Failed to parse %s", objectHandler.resourceManager.Spec.Condition.ExpireAt))
+			objectHandler.log.Error(err, trace(fmt.Sprintf("Failed to parse %s. Abort.", objectHandler.resourceManager.Spec.Condition.ExpireAt)))
+			return
 		}
 
 		now := time.Now()

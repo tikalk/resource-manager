@@ -39,6 +39,8 @@ spec:
               action:
                 description: 'TODO: add validation + enum'
                 type: string
+              actionParam:
+                type: string
               disabled:
                 type: boolean
               dry-run:

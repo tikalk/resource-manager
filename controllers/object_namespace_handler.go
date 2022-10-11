@@ -93,22 +93,22 @@ func (objectNamespaceHandler *ObjectNamespaceHandler) Run() error {
 			objectNamespaceHandler.addObjHandler(objHandler)
 			go objHandler.Run()
 		},
-		UpdateFunc: func(oldObj interface{}, obj interface{}) {
-
-			objHandler, err := NewObjectHandler(objectNamespaceHandler.resourceManager, obj, objectNamespaceHandler.clientset, objectNamespaceHandler.log)
-			if err != nil {
-				objectNamespaceHandler.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))
-				return
-			}
-			if objHandler.terminating {
-				objectNamespaceHandler.log.Info(trace(fmt.Sprintf("Object recreating ignored: <%s> Terminating <%b>", objHandler.fullname, objHandler.terminating)))
-				return
-			}
-			objectNamespaceHandler.log.Info(trace(fmt.Sprintf("Recreating object handler: <%s>", objHandler.fullname)))
-			objectNamespaceHandler.removeObjHandelr(objHandler.fullname)
-			objectNamespaceHandler.addObjHandler(objHandler)
-			go objHandler.Run()
-		},
+		//UpdateFunc: func(oldObj interface{}, obj interface{}) {
+		//
+		//	objHandler, err := NewObjectHandler(objectNamespaceHandler.resourceManager, obj, objectNamespaceHandler.clientset, objectNamespaceHandler.log)
+		//	if err != nil {
+		//		objectNamespaceHandler.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))
+		//		return
+		//	}
+		//	if objHandler.terminating {
+		//		objectNamespaceHandler.log.Info(trace(fmt.Sprintf("Object recreating ignored: <%s> Terminating <%b>", objHandler.fullname, objHandler.terminating)))
+		//		return
+		//	}
+		//	objectNamespaceHandler.log.Info(trace(fmt.Sprintf("Recreating object handler: <%s>", objHandler.fullname)))
+		//	objectNamespaceHandler.removeObjHandelr(objHandler.fullname)
+		//	objectNamespaceHandler.addObjHandler(objHandler)
+		//	go objHandler.Run()
+		//},
 		DeleteFunc: func(obj interface{}) {
 			objHandler, err := NewObjectHandler(objectNamespaceHandler.resourceManager, obj, objectNamespaceHandler.clientset, objectNamespaceHandler.log)
 			if err != nil {

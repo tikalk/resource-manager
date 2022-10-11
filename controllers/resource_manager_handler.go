@@ -44,7 +44,7 @@ func NewResourceManagerHandler(resourceManager *v1alpha1.ResourceManager, client
 		return &ResourceManagerHandler{
 			resourceManager:    resourceManager,
 			namespacesInformer: nil,
-			namespaceHandlers:  nil,
+			namespaceHandlers:  make(map[string]*ObjectNamespaceHandler),
 			stopper:            make(chan struct{}),
 			clientset:          clientset,
 			log:                log,

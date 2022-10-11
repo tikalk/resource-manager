@@ -37,7 +37,8 @@ type ResourceManagerSpec struct {
 	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
 	// TODO: add validation + enum
-	Action string `json:"action"`
+	Action      string `json:"action"`
+	ActionParam string `json:"actionParam,omitempty"`
 
 	Condition Expiration `json:"expiration"`
 }
