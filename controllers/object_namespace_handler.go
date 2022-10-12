@@ -58,73 +58,73 @@ func createInformer(factory informers.SharedInformerFactory, kind string) (infor
 	return informer, err
 }
 
-func (objectNamespaceHandler *ObjectNamespaceHandler) addObjHandler(objHandler *ObjectHandler) {
-	if _, ok := objectNamespaceHandler.objHandlers[objHandler.fullname]; ok {
-		objectNamespaceHandler.log.Error(errors.New("addObjHandler failed"), trace(fmt.Sprintf("object handler already registered <%s>.", objHandler.fullname)))
+func (h *ObjectNamespaceHandler) addObjHandler(objHandler *ObjectHandler) {
+	if _, ok := h.objHandlers[objHandler.fullname]; ok {
+		h.log.Error(errors.New("addObjHandler failed"), trace(fmt.Sprintf("object handler already registered <%s>.", objHandler.fullname)))
 		return
 	}
 
-	objectNamespaceHandler.objHandlers[objHandler.fullname] = objHandler
+	h.objHandlers[objHandler.fullname] = objHandler
 }
 
-func (objectNamespaceHandler *ObjectNamespaceHandler) removeObjHandelr(fullname types.NamespacedName) {
-	if _, ok := objectNamespaceHandler.objHandlers[fullname]; !ok {
-		objectNamespaceHandler.log.Error(errors.New("removeObjHandelr failed"), trace(fmt.Sprintf("object handler already registered <%s>.", fullname)))
+func (h *ObjectNamespaceHandler) removeObjHandelr(fullname types.NamespacedName) {
+	if _, ok := h.objHandlers[fullname]; !ok {
+		h.log.Error(errors.New("removeObjHandelr failed"), trace(fmt.Sprintf("object handler already registered <%s>.", fullname)))
 		return
 	}
-	objectNamespaceHandler.objHandlers[fullname].Stop()
-	delete(objectNamespaceHandler.objHandlers, fullname)
+	h.objHandlers[fullname].Stop()
+	delete(h.objHandlers, fullname)
 }
 
-func (objectNamespaceHandler *ObjectNamespaceHandler) Run() error {
+func (h *ObjectNamespaceHandler) Run() error {
 
-	objectNamespaceHandler.objectsInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	h.objectsInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			objHandler, err := NewObjectHandler(objectNamespaceHandler.resourceManager, obj, objectNamespaceHandler.clientset, objectNamespaceHandler.log)
+			objectHandler, err := NewObjectHandler(h.resourceManager, obj, h.clientset, h.log)
 			if err != nil {
-				objectNamespaceHandler.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))
+				h.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))
 				return
 			}
-			if objHandler.terminating {
-				objectNamespaceHandler.log.Info(trace(fmt.Sprintf("Object adding ignored: <%s> Terminating <%b>", objHandler.fullname, objHandler.terminating)))
+			if objectHandler.terminating {
+				h.log.Info(trace(fmt.Sprintf("Object adding ignored: <%s> Terminating <%b>", objectHandler.fullname, objectHandler.terminating)))
 				return
 			}
-			objectNamespaceHandler.log.Info(trace(fmt.Sprintf("Adding object handler: <%s>", objHandler.fullname)))
-			objectNamespaceHandler.addObjHandler(objHandler)
-			go objHandler.Run()
+			h.log.Info(trace(fmt.Sprintf("Adding object handler: <%s>", objectHandler.fullname)))
+			h.addObjHandler(objectHandler)
+			go objectHandler.Run()
 		},
 		//UpdateFunc: func(oldObj interface{}, obj interface{}) {
 		//
-		//	objHandler, err := NewObjectHandler(objectNamespaceHandler.resourceManager, obj, objectNamespaceHandler.clientset, objectNamespaceHandler.log)
+		//	objHandler, err := NewObjectHandler(h.resourceManager, obj, h.clientset, h.log)
 		//	if err != nil {
-		//		objectNamespaceHandler.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))
+		//		h.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))
 		//		return
 		//	}
 		//	if objHandler.terminating {
-		//		objectNamespaceHandler.log.Info(trace(fmt.Sprintf("Object recreating ignored: <%s> Terminating <%b>", objHandler.fullname, objHandler.terminating)))
+		//		h.log.Info(trace(fmt.Sprintf("Object recreating ignored: <%s> Terminating <%b>", objHandler.fullname, objHandler.terminating)))
 		//		return
 		//	}
-		//	objectNamespaceHandler.log.Info(trace(fmt.Sprintf("Recreating object handler: <%s>", objHandler.fullname)))
-		//	objectNamespaceHandler.removeObjHandelr(objHandler.fullname)
-		//	objectNamespaceHandler.addObjHandler(objHandler)
+		//	h.log.Info(trace(fmt.Sprintf("Recreating object handler: <%s>", objHandler.fullname)))
+		//	h.removeObjHandelr(objHandler.fullname)
+		//	h.addObjHandler(objHandler)
 		//	go objHandler.Run()
 		//},
 		DeleteFunc: func(obj interface{}) {
-			objHandler, err := NewObjectHandler(objectNamespaceHandler.resourceManager, obj, objectNamespaceHandler.clientset, objectNamespaceHandler.log)
+			objHandler, err := NewObjectHandler(h.resourceManager, obj, h.clientset, h.log)
 			if err != nil {
-				objectNamespaceHandler.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))
+				h.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))
 				return
 			}
-			objectNamespaceHandler.log.Info(trace(fmt.Sprintf("Deleting object handler: <%s>", objHandler.fullname)))
-			objectNamespaceHandler.removeObjHandelr(objHandler.fullname)
+			h.log.Info(trace(fmt.Sprintf("Deleting object handler: <%s>", objHandler.fullname)))
+			h.removeObjHandelr(objHandler.fullname)
 		},
 	})
 	// start the objectsInformer
-	go objectNamespaceHandler.objectsInformer.Run(objectNamespaceHandler.stopper)
+	go h.objectsInformer.Run(h.stopper)
 
 	return nil
 }
 
-func (objectNamespaceHandler *ObjectNamespaceHandler) Stop() {
-	close(objectNamespaceHandler.stopper)
+func (h *ObjectNamespaceHandler) Stop() {
+	close(h.stopper)
 }

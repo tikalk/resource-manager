@@ -61,21 +61,21 @@ type ResourceManagerReconciler struct {
 	log       logr.Logger
 }
 
-func (resourceManagerReconciler *ResourceManagerReconciler) registerAndRunResourceManagerHandler(resourceManagerName types.NamespacedName, resourceManagerHandler *ResourceManagerHandler) {
-	resourceManagerReconciler.collectionResourceManagerHandlers[resourceManagerName] = resourceManagerHandler
+func (r *ResourceManagerReconciler) registerAndRunResourceManagerHandler(resourceManagerName types.NamespacedName, resourceManagerHandler *ResourceManagerHandler) {
+	r.collectionResourceManagerHandlers[resourceManagerName] = resourceManagerHandler
 	go resourceManagerHandler.Run()
 
 }
 
-func (resourceManagerReconciler *ResourceManagerReconciler) findResourceManagerHandler(resourceManagerName types.NamespacedName) *ResourceManagerHandler {
-	return resourceManagerReconciler.collectionResourceManagerHandlers[resourceManagerName]
+func (r *ResourceManagerReconciler) findResourceManagerHandler(resourceManagerName types.NamespacedName) *ResourceManagerHandler {
+	return r.collectionResourceManagerHandlers[resourceManagerName]
 }
 
-func (resourceManagerReconciler *ResourceManagerReconciler) removeResourceManagerHandler(resourceManagerName types.NamespacedName) {
-	if _, ok := resourceManagerReconciler.collectionResourceManagerHandlers[resourceManagerName]; ok {
+func (r *ResourceManagerReconciler) removeResourceManagerHandler(resourceManagerName types.NamespacedName) {
+	if _, ok := r.collectionResourceManagerHandlers[resourceManagerName]; ok {
 		// l.Info(fmt.Sprintf("ResourceManager %s changed. Recreating...", req.NamespacedName))
-		resourceManagerReconciler.collectionResourceManagerHandlers[resourceManagerName].Stop()
-		delete(resourceManagerReconciler.collectionResourceManagerHandlers, resourceManagerName)
+		r.collectionResourceManagerHandlers[resourceManagerName].Stop()
+		delete(r.collectionResourceManagerHandlers, resourceManagerName)
 	}
 }
 
@@ -89,60 +89,56 @@ func (resourceManagerReconciler *ResourceManagerReconciler) removeResourceManage
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 
-var ctx context.Context
-var initialized bool
+//var ctx context.Context
+//var initialized bool
+//
+func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 
-func (resourceManagerReconciler *ResourceManagerReconciler) Reconcile(ctx1 context.Context, req ctrl.Request) (ctrl.Result, error) {
-
-	if !initialized {
-		ctx = ctx1
-		initialized = true
-	}
-	resourceManagerReconciler.log.Info(trace(fmt.Sprintf("ResourceManager object <%s> reconciled. Reconciling...", req.NamespacedName)))
+	r.log.Info(trace(fmt.Sprintf("ResourceManager object <%s> reconciled. Reconciling...", request.NamespacedName)))
 
 	resourceManager := &resourcemanagmentv1alpha1.ResourceManager{}
-	if err := resourceManagerReconciler.Get(ctx, req.NamespacedName, resourceManager); err != nil {
+	if err := r.Get(ctx, request.NamespacedName, resourceManager); err != nil {
 		if errors.IsNotFound(err) {
-			resourceManagerReconciler.log.Info(fmt.Sprintf("ResourceManager object %s deleted. Removing...", req.NamespacedName))
-			resourceManagerReconciler.removeResourceManagerHandler(req.NamespacedName)
+			r.log.Info(fmt.Sprintf("ResourceManager object %s deleted. Removing...", request.NamespacedName))
+			r.removeResourceManagerHandler(request.NamespacedName)
 			return ctrl.Result{}, nil
 		}
 
-		resourceManagerReconciler.log.Error(err, fmt.Sprintf("Failed reconcile ResourceManager object %s", req.NamespacedName))
+		r.log.Error(err, fmt.Sprintf("Failed reconcile ResourceManager object %s", request.NamespacedName))
 		return ctrl.Result{}, nil
 	}
 
-	if resourceManagerHandler := resourceManagerReconciler.findResourceManagerHandler(req.NamespacedName); resourceManagerHandler != nil {
-		//resourceManagerReconciler.log.Info(trace(fmt.Sprintf("ResourceManager object updated: \nold <%+v> \nnew <%+v>.", oldObj.resourceManager, resourceManager)))
+	if resourceManagerHandler := r.findResourceManagerHandler(request.NamespacedName); resourceManagerHandler != nil {
+		//r.log.Info(trace(fmt.Sprintf("ResourceManager object updated: \nold <%+v> \nnew <%+v>.", oldObj.resourceManager, resourceManager)))
 		if reflect.DeepEqual(resourceManager.Spec, resourceManagerHandler.resourceManager.Spec) {
-			resourceManagerReconciler.log.Info(trace(fmt.Sprintf("ResourceManager spec is not changed <%s>. Ignoring...", req.NamespacedName)))
+			r.log.Info(trace(fmt.Sprintf("ResourceManager spec is not changed <%s>. Ignoring...", request.NamespacedName)))
 			return ctrl.Result{}, nil
 		}
-		resourceManagerReconciler.log.Info(trace(fmt.Sprintf("ResourceManager object updated <%s>. Removing handler...", req.NamespacedName)))
-		resourceManagerReconciler.removeResourceManagerHandler(req.NamespacedName)
+		r.log.Info(trace(fmt.Sprintf("ResourceManager object updated <%s>. Removing handler...", request.NamespacedName)))
+		r.removeResourceManagerHandler(request.NamespacedName)
 	}
 
 	if resourceManager.Spec.Disabled {
-		resourceManagerReconciler.log.Info(trace(fmt.Sprintf("ResourceManager object disabled <%s>. Ignoring...", req.NamespacedName)))
+		r.log.Info(trace(fmt.Sprintf("ResourceManager object disabled <%s>. Ignoring...", request.NamespacedName)))
 		return ctrl.Result{}, nil
 	}
 
-	resourceManagerReconciler.log.Info(trace(fmt.Sprintf("ResourceManager object added <%s>. Handler creating...", req.NamespacedName)))
-	resourceManagerHandler, err := NewResourceManagerHandler(resourceManager, resourceManagerReconciler.clientset, resourceManagerReconciler.log)
+	r.log.Info(trace(fmt.Sprintf("ResourceManager object added <%s>. Handler creating...", request.NamespacedName)))
+	resourceManagerHandler, err := NewResourceManagerHandler(resourceManager, r.clientset, r.log)
 	if err != nil {
-		resourceManagerReconciler.log.Error(err, fmt.Sprintf("ResourceManagerHandler object %s handler creating failed with error <%s>.", req.NamespacedName, err))
+		r.log.Error(err, fmt.Sprintf("ResourceManagerHandler object %s handler creating failed with error <%s>.", request.NamespacedName, err))
 		return ctrl.Result{}, nil
 	}
 
 	// add handler to collectionResourceManagerHandlers
-	resourceManagerReconciler.log.Info(trace(fmt.Sprintf("ResourceManagerHandler for <%s> registering...", req.NamespacedName)))
-	resourceManagerReconciler.registerAndRunResourceManagerHandler(req.NamespacedName, resourceManagerHandler)
+	r.log.Info(trace(fmt.Sprintf("ResourceManagerHandler for <%s> registering...", request.NamespacedName)))
+	r.registerAndRunResourceManagerHandler(request.NamespacedName, resourceManagerHandler)
 
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (resourceManagerReconciler *ResourceManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *ResourceManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	configLog := uzap.NewProductionEncoderConfig()
 	configLog.EncodeTime = func(ts time.Time, encoder zapcore.PrimitiveArrayEncoder) {
@@ -150,8 +146,8 @@ func (resourceManagerReconciler *ResourceManagerReconciler) SetupWithManager(mgr
 	}
 	logfmtEncoder := zaplogfmt.NewEncoder(configLog)
 	// Construct a new logr.logger.
-	resourceManagerReconciler.log = zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout), zap.Encoder(logfmtEncoder))
-	log.SetLogger(resourceManagerReconciler.log)
+	r.log = zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout), zap.Encoder(logfmtEncoder))
+	log.SetLogger(r.log)
 
 	// collectionResourceManagerHandlers = make(map[types.NamespacedName]chan struct{})
 	cfg, err := config.GetConfig()
@@ -159,15 +155,15 @@ func (resourceManagerReconciler *ResourceManagerReconciler) SetupWithManager(mgr
 		panic(err.Error())
 	}
 
-	resourceManagerReconciler.collectionResourceManagerHandlers = make(map[types.NamespacedName]*ResourceManagerHandler)
+	r.collectionResourceManagerHandlers = make(map[types.NamespacedName]*ResourceManagerHandler)
 
-	resourceManagerReconciler.clientset, err = kubernetes.NewForConfig(cfg)
+	r.clientset, err = kubernetes.NewForConfig(cfg)
 	if err != nil {
 		panic(err.Error())
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&resourcemanagmentv1alpha1.ResourceManager{}).
-		Complete(resourceManagerReconciler)
+		Complete(r)
 }
 
 func trace(msg string) string {

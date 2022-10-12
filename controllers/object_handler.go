@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/go-logr/logr"
@@ -110,9 +111,9 @@ func (objectHandler *ObjectHandler) performObjectDelete() (err error) {
 	var opts metav1.DeleteOptions
 	switch objectHandler.resourceManager.Spec.ResourceKind {
 	case "Namespace":
-		err = objectHandler.clientset.CoreV1().Namespaces().Delete(ctx, objectHandler.fullname.Name, opts)
+		err = objectHandler.clientset.CoreV1().Namespaces().Delete(context.Background(), objectHandler.fullname.Name, opts)
 	case "Deployment":
-		err = objectHandler.clientset.AppsV1().Deployments(objectHandler.fullname.Namespace).Delete(ctx, objectHandler.fullname.Name, opts)
+		err = objectHandler.clientset.AppsV1().Deployments(objectHandler.fullname.Namespace).Delete(context.Background(), objectHandler.fullname.Name, opts)
 	default:
 		err = fmt.Errorf("objectDelete: unxpected object kind <%s>", objectHandler.resourceManager.Spec.ResourceKind)
 	}
@@ -134,9 +135,9 @@ func (objectHandler *ObjectHandler) performObjectPatch() (err error) {
 
 	switch objectHandler.resourceManager.Spec.ResourceKind {
 	case "Namespace":
-		_, err = objectHandler.clientset.CoreV1().Namespaces().Patch(ctx, objectHandler.fullname.Name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{FieldManager: "kubectl-rollout"})
+		_, err = objectHandler.clientset.CoreV1().Namespaces().Patch(context.Background(), objectHandler.fullname.Name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{FieldManager: "kubectl-rollout"})
 	case "Deployment":
-		_, err = objectHandler.clientset.AppsV1().Deployments(objectHandler.fullname.Namespace).Patch(ctx, objectHandler.fullname.Name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{FieldManager: "kubectl-rollout"})
+		_, err = objectHandler.clientset.AppsV1().Deployments(objectHandler.fullname.Namespace).Patch(context.Background(), objectHandler.fullname.Name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{FieldManager: "kubectl-rollout"})
 	default:
 		err = fmt.Errorf("objectDelete: unxpected object kind <%s>", objectHandler.resourceManager.Spec.ResourceKind)
 	}

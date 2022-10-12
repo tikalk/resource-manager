@@ -22,9 +22,9 @@ type ResourceManagerHandler struct {
 	log                logr.Logger
 }
 
-func NewResourceManagerHandler(resourceManager *v1alpha1.ResourceManager, clientset *kubernetes.Clientset, log logr.Logger) (*ResourceManagerHandler, error) {
-	if resourceManager.Spec.NamespaceSelector != nil {
-		selector, _ := metav1.LabelSelectorAsSelector(resourceManager.Spec.NamespaceSelector)
+func NewResourceManagerHandler(rm *v1alpha1.ResourceManager, clientset *kubernetes.Clientset, log logr.Logger) (*ResourceManagerHandler, error) {
+	if rm.Spec.NamespaceSelector != nil {
+		selector, _ := metav1.LabelSelectorAsSelector(rm.Spec.NamespaceSelector)
 		labelOptions := informers.WithTweakListOptions(func(opts *metav1.ListOptions) {
 			opts.LabelSelector = selector.String()
 		})
@@ -33,7 +33,7 @@ func NewResourceManagerHandler(resourceManager *v1alpha1.ResourceManager, client
 		namespacesInformer := factory.Core().V1().Namespaces().Informer()
 
 		return &ResourceManagerHandler{
-			resourceManager:    resourceManager,
+			resourceManager:    rm,
 			namespacesInformer: namespacesInformer,
 			namespaceHandlers:  make(map[string]*ObjectNamespaceHandler),
 			stopper:            make(chan struct{}),
@@ -42,7 +42,7 @@ func NewResourceManagerHandler(resourceManager *v1alpha1.ResourceManager, client
 		}, nil
 	} else {
 		return &ResourceManagerHandler{
-			resourceManager:    resourceManager,
+			resourceManager:    rm,
 			namespacesInformer: nil,
 			namespaceHandlers:  make(map[string]*ObjectNamespaceHandler),
 			stopper:            make(chan struct{}),
@@ -52,92 +52,92 @@ func NewResourceManagerHandler(resourceManager *v1alpha1.ResourceManager, client
 	}
 }
 
-func (resourceManagerHandler *ResourceManagerHandler) addNamespaceHandler(objectNamespaceHandler *ObjectNamespaceHandler) {
-	resourceManagerHandler.namespaceHandlers[objectNamespaceHandler.namespaceName] = objectNamespaceHandler
+func (h *ResourceManagerHandler) addNamespaceHandler(objectNamespaceHandler *ObjectNamespaceHandler) {
+	h.namespaceHandlers[objectNamespaceHandler.namespaceName] = objectNamespaceHandler
 }
 
-func (resourceManagerHandler *ResourceManagerHandler) removeNamespaceHandler(namespaceName string) {
-	if _, ok := resourceManagerHandler.namespaceHandlers[namespaceName]; ok {
-		resourceManagerHandler.namespaceHandlers[namespaceName].Stop()
-		delete(resourceManagerHandler.namespaceHandlers, namespaceName)
+func (h *ResourceManagerHandler) removeNamespaceHandler(namespaceName string) {
+	if _, ok := h.namespaceHandlers[namespaceName]; ok {
+		h.namespaceHandlers[namespaceName].Stop()
+		delete(h.namespaceHandlers, namespaceName)
 	}
 }
 
-func (resourceManagerHandler *ResourceManagerHandler) Run() error {
+func (h *ResourceManagerHandler) Run() error {
 
-	resourceManagerHandler.log.Info(trace(fmt.Sprintf("Namespace selector: <%s> for resourceManagerHandler <%s>", resourceManagerHandler.resourceManager.Spec.NamespaceSelector.String(), resourceManagerHandler.resourceManager.Name)))
-	if resourceManagerHandler.resourceManager.Spec.NamespaceSelector != nil {
-		resourceManagerHandler.namespacesInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	h.log.Info(trace(fmt.Sprintf("Namespace selector: <%s> for h <%s>", h.resourceManager.Spec.NamespaceSelector.String(), h.resourceManager.Name)))
+	if h.resourceManager.Spec.NamespaceSelector != nil {
+		h.namespacesInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				objectNamespaceHandler, err := NewObjectNamespaceHandler(resourceManagerHandler.resourceManager, obj.(*v1.Namespace).Name, resourceManagerHandler.clientset, resourceManagerHandler.log)
+				objectNamespaceHandler, err := NewObjectNamespaceHandler(h.resourceManager, obj.(*v1.Namespace).Name, h.clientset, h.log)
 				if err != nil {
-					resourceManagerHandler.log.Error(err, fmt.Sprintf("NewObjectNamespaceHandler handler creating failed with error <%s>.", err))
+					h.log.Error(err, fmt.Sprintf("NewObjectNamespaceHandler handler creating failed with error <%s>.", err))
 					return
 				}
 				//if objectNamespaceHandler.terminating {
-				//	resourceManagerHandler.log.Info(trace(fmt.Sprintf("Object adding ignored: <%s> Terminating <%b>", objectNamespaceHandler.fullname, objectNamespaceHandler.terminating)))
+				//	h.log.Info(trace(fmt.Sprintf("Object adding ignored: <%s> Terminating <%b>", objectNamespaceHandler.fullname, objectNamespaceHandler.terminating)))
 				//	return
 				//}
-				resourceManagerHandler.log.Info(trace(fmt.Sprintf("Adding namespace handler: <%s> for resourceManagerHandler <%s>", objectNamespaceHandler.namespaceName, resourceManagerHandler.resourceManager.Name)))
-				resourceManagerHandler.addNamespaceHandler(objectNamespaceHandler)
+				h.log.Info(trace(fmt.Sprintf("Adding namespace handler: <%s> for h <%s>", objectNamespaceHandler.namespaceName, h.resourceManager.Name)))
+				h.addNamespaceHandler(objectNamespaceHandler)
 				go objectNamespaceHandler.Run()
 				// TODO: handle terminating state  - obj.(*v1.Namespace).Status.Phase == "Terminating"
 			},
 			//UpdateFunc: func(oldObj interface{}, obj interface{}) {
-			//	objectNamespaceHandler, err := NewObjectNamespaceHandler(resourceManagerHandler.resourceManager, obj.(*v1.Namespace).Name, resourceManagerHandler.clientset, resourceManagerHandler.log)
+			//	objectNamespaceHandler, err := NewObjectNamespaceHandler(h.resourceManager, obj.(*v1.Namespace).Name, h.clientset, h.log)
 			//	if err != nil {
-			//		resourceManagerHandler.log.Error(err, fmt.Sprintf("NewObjectNamespaceHandler handler creating failed with error <%s> for resourceManagerHandler <%s>", err, resourceManagerHandler.resourceManager.Name))
+			//		h.log.Error(err, fmt.Sprintf("NewObjectNamespaceHandler handler creating failed with error <%s> for h <%s>", err, h.resourceManager.Name))
 			//		return
 			//	}
 			//	//if objectNamespaceHandler.terminating {
-			//	//	resourceManagerHandler.log.Info(trace(fmt.Sprintf("Object recreating ignored: <%s> Terminating <%b>", objectNamespaceHandler.namespaceName, objectNamespaceHandler.terminating)))
+			//	//	h.log.Info(trace(fmt.Sprintf("Object recreating ignored: <%s> Terminating <%b>", objectNamespaceHandler.namespaceName, objectNamespaceHandler.terminating)))
 			//	//	return
 			//	//}
 			//	if reflect.DeepEqual(obj.(*v1.Namespace), oldObj.(*v1.Namespace)) {
-			//		resourceManagerHandler.log.Info(trace(fmt.Sprintf("Namespace is not changed <%s> for resourceManagerHandler <%s>. Update Ignored.", obj.(*v1.Namespace).Name, resourceManagerHandler.resourceManager.Name)))
+			//		h.log.Info(trace(fmt.Sprintf("Namespace is not changed <%s> for h <%s>. Update Ignored.", obj.(*v1.Namespace).Name, h.resourceManager.Name)))
 			//		return
 			//	}
-			//	resourceManagerHandler.log.Info(trace(fmt.Sprintf("Recreating namespace handler: <%s> for resourceManagerHandler <%s>", objectNamespaceHandler.namespaceName, resourceManagerHandler.resourceManager.Name)))
-			//	resourceManagerHandler.removeNamespaceHandler(objectNamespaceHandler.namespaceName)
-			//	resourceManagerHandler.addNamespaceHandler(objectNamespaceHandler)
+			//	h.log.Info(trace(fmt.Sprintf("Recreating namespace handler: <%s> for h <%s>", objectNamespaceHandler.namespaceName, h.resourceManager.Name)))
+			//	h.removeNamespaceHandler(objectNamespaceHandler.namespaceName)
+			//	h.addNamespaceHandler(objectNamespaceHandler)
 			//	go objectNamespaceHandler.Run()
 			//},
 			DeleteFunc: func(obj interface{}) {
-				objectNamespaceHandler, err := NewObjectNamespaceHandler(resourceManagerHandler.resourceManager, obj.(*v1.Namespace).Name, resourceManagerHandler.clientset, resourceManagerHandler.log)
+				onh, err := NewObjectNamespaceHandler(h.resourceManager, obj.(*v1.Namespace).Name, h.clientset, h.log)
 				if err != nil {
-					resourceManagerHandler.log.Error(err, fmt.Sprintf("NewObjectNamespaceHandler handler creating failed with error <%s>  for resourceManagerHandler <%s>.", err, resourceManagerHandler.resourceManager.Name))
+					h.log.Error(err, fmt.Sprintf("NewObjectNamespaceHandler handler creating failed with error <%s>  for h <%s>.", err, h.resourceManager.Name))
 					return
 				}
-				resourceManagerHandler.log.Info(trace(fmt.Sprintf("Deleting namespace handler: <%s>", objectNamespaceHandler.namespaceName)))
-				resourceManagerHandler.removeNamespaceHandler(objectNamespaceHandler.namespaceName)
+				h.log.Info(trace(fmt.Sprintf("Deleting namespace handler: <%s>", onh.namespaceName)))
+				h.removeNamespaceHandler(onh.namespaceName)
 			},
 		})
 		// start the informer
-		go resourceManagerHandler.namespacesInformer.Run(resourceManagerHandler.stopper)
+		go h.namespacesInformer.Run(h.stopper)
 	} else {
-		objectNamespaceHandler, err := NewObjectNamespaceHandler(resourceManagerHandler.resourceManager, resourceManagerHandler.resourceManager.Namespace, resourceManagerHandler.clientset, resourceManagerHandler.log)
+		onh, err := NewObjectNamespaceHandler(h.resourceManager, h.resourceManager.Namespace, h.clientset, h.log)
 		if err != nil {
-			resourceManagerHandler.log.Error(err, fmt.Sprintf("NewObjectNamespaceHandler handler creating failed with error <%s>  for resourceManagerHandler <%s>", err, resourceManagerHandler.resourceManager.Name))
+			h.log.Error(err, fmt.Sprintf("NewObjectNamespaceHandler handler creating failed with error <%s>  for h <%s>", err, h.resourceManager.Name))
 			return err
 		}
-		//if objectNamespaceHandler.terminating {
-		//	resourceManagerHandler.log.Info(trace(fmt.Sprintf("Object adding ignored: <%s> Terminating <%b>", objectNamespaceHandler.fullname, objectNamespaceHandler.terminating)))
+		//if onh.terminating {
+		//	h.log.Info(trace(fmt.Sprintf("Object adding ignored: <%s> Terminating <%b>", onh.fullname, onh.terminating)))
 		//	return
 		//}
-		resourceManagerHandler.log.Info(trace(fmt.Sprintf("Adding namespace handler staticly: <%s>  for resourceManagerHandler <%s>", objectNamespaceHandler.namespaceName, resourceManagerHandler.resourceManager.Name)))
-		resourceManagerHandler.addNamespaceHandler(objectNamespaceHandler)
-		go objectNamespaceHandler.Run()
+		h.log.Info(trace(fmt.Sprintf("Adding namespace handler staticly: <%s>  for h <%s>", onh.namespaceName, h.resourceManager.Name)))
+		h.addNamespaceHandler(onh)
+		go onh.Run()
 	}
 
 	return nil
 }
 
-func (resourceManagerHandler *ResourceManagerHandler) Stop() {
+func (h *ResourceManagerHandler) Stop() {
 	// stop channel
-	close(resourceManagerHandler.stopper)
+	close(h.stopper)
 
 	// TODO: cleanup
-	for _, h := range resourceManagerHandler.namespaceHandlers {
+	for _, h := range h.namespaceHandlers {
 		h.Stop()
 	}
 }
