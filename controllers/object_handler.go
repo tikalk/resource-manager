@@ -150,14 +150,14 @@ func (h *ObjectHandler) performObjectPatch() (err error) {
 
 func (h *ObjectHandler) Run() {
 	var wait time.Duration
-	if h.resourceManager.Spec.Condition.Timeframe != "" {
-		timeframe, _ := time.ParseDuration(h.resourceManager.Spec.Condition.Timeframe)
+	if h.resourceManager.Spec.Condition.ExpireAfter != "" {
+		expireAfter, _ := time.ParseDuration(h.resourceManager.Spec.Condition.ExpireAfter)
 		age := time.Now().Sub(h.creationTime)
-		wait = timeframe - age
+		wait = expireAfter - age
 
 		h.log.Info(trace(fmt.Sprintf("object timeframe expiration <%s> timeframe <%s> age <%s> wait <%s>",
 			h.fullname,
-			timeframe.String(),
+			expireAfter.String(),
 			age.String(),
 			wait.String())))
 	} else if h.resourceManager.Spec.Condition.ExpireAt != "" {
