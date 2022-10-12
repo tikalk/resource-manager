@@ -32,34 +32,18 @@ type ResourceManagerSpec struct {
 	DryRun bool `json:"dry-run,omitempty"`
 
 	// TODO: add validation
-	Resources string                `json:"resources"`
-	Selector  *metav1.LabelSelector `json:"selector"`
+	Resource string                `json:"resource"`
+	Selector *metav1.LabelSelector `json:"selector"`
 
 	// TODO: add validation + enum
-	Action string `json:"action"`
-
-	Condition []Condition `json:"condition"`
+	Action      string     `json:"action"`
+	ActionParam string     `json:"actionParam,omitempty"`
+	Condition   Expiration `json:"expiration"`
 }
 
-type Condition struct {
-	ExpiryCondition    `json:",inline,omitempty"`
-	TimeframeCondition `json:",inline,omitempty"`
-	BaseCondition      `json:",inline"`
-}
-
-type BaseCondition struct {
-	Type string `json:"type"`
-}
-
-type ExpiryCondition struct {
-	BaseCondition `json:",inline"`
-	After         string `json:"after,omitempty"`
-}
-
-type TimeframeCondition struct {
-	BaseCondition `json:",inline"`
-	Timeframe     string `json:"time, omitempty"`
-	//Timezone  string `json:"timeZone"`
+type Expiration struct {
+	ExpireAt    string `json:"at,omitempty"`
+	ExpireAfter string `json:"after,omitempty"`
 }
 
 // ResourceManagerStatus defines the observed state of ResourceManager

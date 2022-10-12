@@ -38,24 +38,20 @@ spec:
               action:
                 description: 'TODO: add validation + enum'
                 type: string
+              actionParam:
+                type: string
               active:
                 type: boolean
-              condition:
-                items:
-                  properties:
-                    after:
-                      type: string
-                    time:
-                      type: string
-                    type:
-                      type: string
-                  required:
-                  - type
-                  type: object
-                type: array
               dry-run:
                 type: boolean
-              resources:
+              expiration:
+                properties:
+                  after:
+                    type: string
+                  at:
+                    type: string
+                type: object
+              resource:
                 description: 'TODO: add validation'
                 type: string
               selector:
@@ -107,8 +103,8 @@ spec:
                 type: object
             required:
             - action
-            - condition
-            - resources
+            - expiration
+            - resource
             - selector
             type: object
           status:

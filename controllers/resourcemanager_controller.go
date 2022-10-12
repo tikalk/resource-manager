@@ -19,22 +19,35 @@ package controllers
 import (
 	"context"
 	"fmt"
-
-	"github.com/tikalk/resource-manager/api/v1alpha1"
 	"github.com/tikalk/resource-manager/controllers/handlers"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	"os"
+	"runtime"
+	"time"
+
+	"github.com/go-logr/logr"
+	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	zaplogfmt "github.com/sykesm/zap-logfmt"
+	uzap "go.uber.org/zap"
 )
 
 // ResourceManagerReconciler reconciles a ResourceManager object
 type ResourceManagerReconciler struct {
 	client.Client
-	Scheme     *runtime.Scheme
-	collection map[types.NamespacedName]handlers.Obj
+	Scheme                            *k8sruntime.Scheme
+	collectionResourceManagerHandlers map[types.NamespacedName]handlers.ResourceManagerHandler
+	clientset                         *kubernetes.Clientset
+	log                               logr.Logger
 }
 
 //+kubebuilder:rbac:groups=resource-management.tikalk.com,resources=resourcemanagers,verbs=get;list;watch;create;update;patch;delete
@@ -60,15 +73,15 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	name := req.NamespacedName.String()
 
 	// your logic here
-	resourceManagerObj := &v1alpha1.ResourceManager{}
+	resourceManagerObj := &resourcemanagmentv1alpha1.ResourceManager{}
 	err := r.Get(ctx, req.NamespacedName, resourceManagerObj)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			l.Info(fmt.Sprintf("ResourceManager object %s has Not Found!!! \n", req.NamespacedName))
-			r.collection[req.NamespacedName].Stop()
+			r.collectionResourceManagerHandlers[req.NamespacedName].Stop()
 
-			// delete the key from collection map
-			delete(r.collection, req.NamespacedName)
+			// delete the key from collectionResourceManagerHandlers map
+			delete(r.collectionResourceManagerHandlers, req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
 
@@ -80,25 +93,60 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// config handler object
 	h := handlers.InitObj(*resourceManagerObj, r.Client, ctx, l)
 
-	// check if resource exists in our collection, if so, delete
-	if _, ok := r.collection[h.Name]; ok {
+	// check if resource exists in our collectionResourceManagerHandlers, if so, delete
+	if _, ok := r.collectionResourceManagerHandlers[h.Name]; ok {
 		l.Info(fmt.Sprintf("Stopping loop for %s\n", h.Name))
-		// delete the key from collection map
-		delete(r.collection, h.Name)
+		// delete the key from collectionResourceManagerHandlers map
+		delete(r.collectionResourceManagerHandlers, h.Name)
 	}
 
-	// add handler to collection
-	r.collection[req.NamespacedName] = h
+	// add handler to collectionResourceManagerHandlers
+	r.collectionResourceManagerHandlers[req.NamespacedName] = h
 
-	go r.collection[req.NamespacedName].Run()
+	go r.collectionResourceManagerHandlers[req.NamespacedName].Run()
 
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ResourceManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.collection = make(map[types.NamespacedName]handlers.Obj)
+
+	configLog := uzap.NewProductionEncoderConfig()
+	configLog.EncodeTime = func(ts time.Time, encoder zapcore.PrimitiveArrayEncoder) {
+		encoder.AppendString(ts.UTC().Format(time.RFC3339Nano))
+	}
+	logfmtEncoder := zaplogfmt.NewEncoder(configLog)
+	// Construct a new logr.logger.
+	r.log = zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout), zap.Encoder(logfmtEncoder))
+	log.SetLogger(r.log)
+
+	// collectionResourceManagerHandlers = make(map[types.NamespacedName]chan struct{})
+	cfg, err := config.GetConfig()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	r.collectionResourceManagerHandlers = make(map[types.NamespacedName]handlers.ResourceManagerHandler)
+
+	r.clientset, err = kubernetes.NewForConfig(cfg)
+	if err != nil {
+		panic(err.Error())
+	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.ResourceManager{}).
+		For(&resourcemanagmentv1alpha1.ResourceManager{}).
 		Complete(r)
+}
+
+func trace(msg string) string {
+	pc, file, line, ok := runtime.Caller(1)
+	if !ok {
+		return fmt.Sprintf("%s:%d %s | %s", "?", 0, "?", msg)
+	}
+
+	fn := runtime.FuncForPC(pc)
+	if fn == nil {
+		return fmt.Sprintf("%s:%d %s | %s", file, line, "?", msg)
+	}
+
+	return fmt.Sprintf("%s:%d %s | %s", file, line, fn.Name(), msg)
 }

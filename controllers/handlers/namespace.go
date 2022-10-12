@@ -11,11 +11,11 @@ import (
 )
 
 // HandleNamespaceObj handle namespace objects that related to the resource-manager controller
-func (o Obj) HandleNamespaceObj() {
+func (o ResourceManagerHandler) HandleNamespaceObj() {
 	// get all the namespaces with the desired selector labels
 	namespacesToHandle, err := o.GetNamespacesByLabel()
 	if err != nil {
-		o.l.Error(err, fmt.Sprintf("%s: cannot list namespaces\n", o.Name))
+		o.log.Error(err, fmt.Sprintf("%s: cannot list namespaces\n", o.Name))
 		return
 	}
 
@@ -26,7 +26,7 @@ func (o Obj) HandleNamespaceObj() {
 	}
 
 	for _, ns := range namespacesToHandle {
-		switch o.rm.Spec.Condition[0].Type {
+		switch o.resourceManager.Spec.Condition[0].Type {
 		case "expiry":
 			o.handleExpiry(ns)
 		case "timeframe":
@@ -38,15 +38,15 @@ func (o Obj) HandleNamespaceObj() {
 }
 
 // GetNamespacesByLabel get only namespaces that contains a specific label
-func (o Obj) GetNamespacesByLabel() ([]v1.Namespace, error) {
+func (o ResourceManagerHandler) GetNamespacesByLabel() ([]v1.Namespace, error) {
 
 	var listOfNamespaces []v1.Namespace
 	nsListObj := &v1.NamespaceList{}
 
-	if err := o.c.List(o.ctx, nsListObj, &client.ListOptions{
-		LabelSelector: labels.SelectorFromSet(o.rm.Spec.Selector.MatchLabels),
+	if err := o.client.List(o.ctx, nsListObj, &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(o.resourceManager.Spec.Selector.MatchLabels),
 	}); err != nil {
-		o.l.Error(err, fmt.Sprintf("%s: unable to fetch namespaces", o.Name))
+		o.log.Error(err, fmt.Sprintf("%s: unable to fetch namespaces", o.Name))
 		return nil, err
 	}
 
@@ -57,10 +57,10 @@ func (o Obj) GetNamespacesByLabel() ([]v1.Namespace, error) {
 }
 
 // deleteNamespace delete namespace obj
-func (o Obj) deleteNamespace(namespace v1.Namespace) {
-	err := o.c.Delete(o.ctx, namespace.DeepCopy(), &client.DeleteOptions{})
+func (o ResourceManagerHandler) deleteNamespace(namespace v1.Namespace) {
+	err := o.client.Delete(o.ctx, namespace.DeepCopy(), &client.DeleteOptions{})
 	if err != nil {
-		o.l.Error(err, fmt.Sprintf("cannot delete namespaces\n"))
+		o.log.Error(err, fmt.Sprintf("cannot delete namespaces\n"))
 	}
 	time.Sleep(5 * time.Second)
 	fmt.Printf("%s: namespace '%s' has been deleted \n", o.Name, namespace.Name)
@@ -68,15 +68,15 @@ func (o Obj) deleteNamespace(namespace v1.Namespace) {
 }
 
 // handleTimeframe handle timeframe type
-func (o Obj) handleTimeframe(namespace v1.Namespace) {
-	fmt.Printf("namespace '%s' will be deleted at timeframe: %s  \n", namespace.Name, o.rm.Spec.Condition[0].Timeframe)
-	err, doesIntervalOccurred := utils.IsIntervalOccurred(o.rm.Spec.Condition[0].Timeframe)
+func (o ResourceManagerHandler) handleTimeframe(namespace v1.Namespace) {
+	fmt.Printf("namespace '%s' will be deleted at timeframe: %s  \n", namespace.Name, o.resourceManager.Spec.Condition[0].Timeframe)
+	err, doesIntervalOccurred := utils.IsIntervalOccurred(o.resourceManager.Spec.Condition[0].Timeframe)
 	if err != nil {
-		o.l.Error(err, fmt.Sprintf("cannot calculate timeframe\n"))
+		o.log.Error(err, fmt.Sprintf("cannot calculate timeframe\n"))
 		return
 	}
 	if doesIntervalOccurred {
-		switch o.rm.Spec.Action {
+		switch o.resourceManager.Spec.Action {
 		case "delete":
 			fmt.Printf("namespace '%s' is in timeframe and will be deleted \n", namespace.Name)
 			o.deleteNamespace(namespace)
@@ -85,10 +85,10 @@ func (o Obj) handleTimeframe(namespace v1.Namespace) {
 }
 
 // handleExpiry handle expiry type
-func (o Obj) handleExpiry(namespace v1.Namespace) {
-	expired, secondsUntilExpire := utils.IsObjExpired(namespace.CreationTimestamp, o.rm.Spec.Condition[0].After)
+func (o ResourceManagerHandler) handleExpiry(namespace v1.Namespace) {
+	expired, secondsUntilExpire := utils.IsObjExpired(namespace.CreationTimestamp, o.resourceManager.Spec.Condition[0].After)
 	if expired {
-		switch o.rm.Spec.Action {
+		switch o.resourceManager.Spec.Action {
 		case "delete":
 			fmt.Printf("namespace '%s' has been expired and will be deleted \n", namespace.Name)
 			o.deleteNamespace(namespace)
