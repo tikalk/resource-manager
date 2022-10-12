@@ -20,7 +20,6 @@ type ObjectHandler struct {
 	object          interface{}
 	fullname        types.NamespacedName
 	creationTime    time.Time
-	terminating     bool
 	stopper         chan struct{}
 	clientset       *kubernetes.Clientset
 	log             logr.Logger
@@ -38,17 +37,11 @@ func NewObjectHandler(resourceManager *v1alpha1.ResourceManager, obj interface{}
 		return nil, err
 	}
 
-	terminating, err := extractTerminating(resourceManager.Spec.ResourceKind, obj)
-	if err != nil {
-		return nil, err
-	}
-
 	// return the object handler
 	objectHandler := &ObjectHandler{
 		object:          obj,
 		fullname:        fullName,
 		creationTime:    creationTime,
-		terminating:     terminating,
 		stopper:         make(chan struct{}),
 		resourceManager: resourceManager,
 		clientset:       clientset,
@@ -67,18 +60,6 @@ func extractFullname(kind string, obj interface{}) (fullname types.NamespacedNam
 		err = fmt.Errorf("extractFullname error: unxpected object kind <%s>", kind)
 	}
 	return fullname, err
-}
-
-func extractTerminating(kind string, obj interface{}) (phase bool, err error) {
-	switch kind {
-	case "Namespace":
-		phase = obj.(*v1.Namespace).Status.Phase == "Terminating"
-	case "Deployment":
-		phase = obj.(*appsv1.Deployment).Status.String() == "Terminating"
-	default:
-		err = fmt.Errorf("extractTerminating error: unxpected object kind <%s>", kind)
-	}
-	return phase, err
 }
 
 func extractCreationTime(kind string, obj interface{}) (time time.Time, err error) {
@@ -155,7 +136,7 @@ func (h *ObjectHandler) Run() {
 		age := time.Now().Sub(h.creationTime)
 		wait = expireAfter - age
 
-		h.log.Info(trace(fmt.Sprintf("object timeframe expiration <%s> timeframe <%s> age <%s> wait <%s>",
+		h.log.Info(trace(fmt.Sprintf("object age expiration <%s> after <%s> age <%s> wait <%s>",
 			h.fullname,
 			expireAfter.String(),
 			age.String(),

@@ -85,10 +85,6 @@ func (h *ResourceManagerHandler) Run() error {
 				h.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))
 				return
 			}
-			if objectHandler.terminating {
-				h.log.Info(trace(fmt.Sprintf("Object adding ignored: <%s> Terminating <%b>", objectHandler.fullname, objectHandler.terminating)))
-				return
-			}
 			h.log.Info(trace(fmt.Sprintf("Adding object handler: <%s>", objectHandler.fullname)))
 			h.addObjHandler(objectHandler)
 			go objectHandler.Run()
