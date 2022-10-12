@@ -19,8 +19,10 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	"github.com/tikalk/resource-manager/api/v1alpha1"
 	"github.com/tikalk/resource-manager/controllers/handlers"
+	"github.com/tikalk/resource-manager/controllers/new_handlers"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,7 +34,8 @@ import (
 // ResourceManagerReconciler reconciles a ResourceManager object
 type ResourceManagerReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme     *runtime.Scheme
+	collection map[types.NamespacedName]FHandler
 }
 
 //+kubebuilder:rbac:groups=resource-management.tikalk.com,resources=resourcemanagers,verbs=get;list;watch;create;update;patch;delete
@@ -52,13 +55,6 @@ type ResourceManagerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 
-var collection map[types.NamespacedName]FHandler
-
-type FHandler struct {
-	F    func(stop chan bool)
-	Stop chan bool
-}
-
 func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	l := log.FromContext(ctx)
@@ -70,10 +66,10 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if err != nil {
 		if errors.IsNotFound(err) {
 			l.Info(fmt.Sprintf("ResourceManager object %s has Not Found!!! \n", req.NamespacedName))
-			collection[req.NamespacedName].Stop <- true
+			r.collection[req.NamespacedName].Stop <- true
 
 			// delete the key from collection map
-			delete(collection, req.NamespacedName)
+			delete(r.collection, req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
 
@@ -105,15 +101,17 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		h.Spec.Condition[0].Type))
 
 	// check if resource exists in our collection, if so, delete
-	if _, ok := collection[h.Name]; ok {
+	if _, ok := r.collection[h.Name]; ok {
 		l.Info(fmt.Sprintf("Stopping loop for %s\n", h.Name))
-		collection[h.Name].Stop <- true
+		r.collection[h.Name].Stop <- true
 		// delete the key from collection map
-		delete(collection, h.Name)
+		delete(r.collection, h.Name)
 	}
 
 	// create new collection
-	collection[h.Name] = FHandler{
+	r.collection[h.Name] = new_handlers.InitFHandler()
+
+	r.collection[h.Name] = &new_handlers.FHandler{
 		F: func(stop chan bool) {
 			for {
 				select {
@@ -128,11 +126,11 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 				}
 			}
 		},
-		Stop: make(chan bool),
+		stop: make(chan bool),
 	}
 
 	// export to new var
-	c := collection[h.Name]
+	c := r.collection[h.Name]
 
 	// execute in a new thread
 	go c.F(c.Stop)
@@ -142,7 +140,7 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ResourceManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	collection = make(map[types.NamespacedName]FHandler)
+	r.collection = make(map[types.NamespacedName]FHandler)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ResourceManager{}).
 		Complete(r)
