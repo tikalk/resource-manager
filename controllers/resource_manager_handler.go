@@ -29,6 +29,7 @@ func NewResourceManagerHandler(resourceManager *v1alpha1.ResourceManager, client
 	labelOptions := informers.WithTweakListOptions(func(opts *metav1.ListOptions) {
 		opts.LabelSelector = selector.String()
 	})
+
 	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(resourceManager.Namespace), labelOptions)
 
 	objectsInformer, err := createObjectsInformer(factory, resourceManager.Spec.ResourceKind)
@@ -69,7 +70,7 @@ func (h *ResourceManagerHandler) addObjHandler(objHandler *ObjectHandler) {
 
 func (h *ResourceManagerHandler) removeObjHandelr(fullname types.NamespacedName) {
 	if _, ok := h.objHandlers[fullname]; !ok {
-		h.log.Error(errors.New("removeObjHandelr failed"), trace(fmt.Sprintf("object handler already registered <%s>.", fullname)))
+		h.log.Error(errors.New("removeObjHandelr failed"), trace(fmt.Sprintf("object handler removing failed <%s>.", fullname)))
 		return
 	}
 	h.objHandlers[fullname].Stop()

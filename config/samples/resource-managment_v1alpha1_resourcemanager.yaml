@@ -13,6 +13,9 @@ spec:
     matchExpressions:
       - { key: tier, operator: In, values: [ cache ] }
       - { key: environment, operator: NotIn, values: [ dev, dev2 ] }
+#  namespaces:
+#    - qa1
+#    - qa2
 #  namespaceSelector: {}
 #  namespaceSelector:
 #    matchLabels:

@@ -54,28 +54,28 @@ import (
 // ResourceManagerReconciler reconciles a ResourceManager object
 type ResourceManagerReconciler struct {
 	client.Client
-	Scheme                            *k8sruntime.Scheme
-	collectionResourceManagerHandlers map[types.NamespacedName]*ResourceManagerHandler
+	Scheme                  *k8sruntime.Scheme
+	resourceManagerHandlers map[types.NamespacedName]*ResourceManagerHandler
 
 	clientset *kubernetes.Clientset
 	log       logr.Logger
 }
 
 func (r *ResourceManagerReconciler) registerAndRunResourceManagerHandler(resourceManagerName types.NamespacedName, resourceManagerHandler *ResourceManagerHandler) {
-	r.collectionResourceManagerHandlers[resourceManagerName] = resourceManagerHandler
+	r.resourceManagerHandlers[resourceManagerName] = resourceManagerHandler
 	go resourceManagerHandler.Run()
 
 }
 
 func (r *ResourceManagerReconciler) findResourceManagerHandler(resourceManagerName types.NamespacedName) *ResourceManagerHandler {
-	return r.collectionResourceManagerHandlers[resourceManagerName]
+	return r.resourceManagerHandlers[resourceManagerName]
 }
 
 func (r *ResourceManagerReconciler) removeResourceManagerHandler(resourceManagerName types.NamespacedName) {
-	if _, ok := r.collectionResourceManagerHandlers[resourceManagerName]; ok {
+	if _, ok := r.resourceManagerHandlers[resourceManagerName]; ok {
 		// l.Info(fmt.Sprintf("ResourceManager %s changed. Recreating...", req.NamespacedName))
-		r.collectionResourceManagerHandlers[resourceManagerName].Stop()
-		delete(r.collectionResourceManagerHandlers, resourceManagerName)
+		r.resourceManagerHandlers[resourceManagerName].Stop()
+		delete(r.resourceManagerHandlers, resourceManagerName)
 	}
 }
 
@@ -130,7 +130,7 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, request ctrl.
 		return ctrl.Result{}, nil
 	}
 
-	// add handler to collectionResourceManagerHandlers
+	// add handler to resourceManagerHandlers
 	r.log.Info(trace(fmt.Sprintf("ResourceManagerHandler for <%s> registering...", request.NamespacedName)))
 	r.registerAndRunResourceManagerHandler(request.NamespacedName, resourceManagerHandler)
 
@@ -149,13 +149,13 @@ func (r *ResourceManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.log = zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout), zap.Encoder(logfmtEncoder))
 	log.SetLogger(r.log)
 
-	// collectionResourceManagerHandlers = make(map[types.NamespacedName]chan struct{})
+	// resourceManagerHandlers = make(map[types.NamespacedName]chan struct{})
 	cfg, err := config.GetConfig()
 	if err != nil {
 		panic(err.Error())
 	}
 
-	r.collectionResourceManagerHandlers = make(map[types.NamespacedName]*ResourceManagerHandler)
+	r.resourceManagerHandlers = make(map[types.NamespacedName]*ResourceManagerHandler)
 
 	r.clientset, err = kubernetes.NewForConfig(cfg)
 	if err != nil {
