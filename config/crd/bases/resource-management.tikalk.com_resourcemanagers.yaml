@@ -45,10 +45,11 @@ spec:
                   properties:
                     after:
                       type: string
+                    time:
+                      type: string
                     type:
                       type: string
                   required:
-                  - after
                   - type
                   type: object
                 type: array

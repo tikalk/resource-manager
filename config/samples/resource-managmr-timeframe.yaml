@@ -11,5 +11,7 @@ spec:
       name: managed-namespace1
   action: "delete"
   condition:
-  - type: expiry
-    after: "1m"
+  - type: timeframe
+    time: "12:20"
+#    timeZone: "Asia/Jerusalem"
+
