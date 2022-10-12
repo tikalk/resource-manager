@@ -22,7 +22,7 @@ type Obj struct {
 	stop chan bool
 }
 
-func InitObj(rm resourcemanagmentv1alpha1.ResourceManager, c client.Client, ctx context.Context, l logr.Logger) *Obj {
+func InitObj(rm resourcemanagmentv1alpha1.ResourceManager, c client.Client, ctx context.Context, l logr.Logger) Obj {
 	stop := make(chan bool)
 
 	name := types.NamespacedName{
@@ -30,7 +30,7 @@ func InitObj(rm resourcemanagmentv1alpha1.ResourceManager, c client.Client, ctx 
 		Namespace: rm.Namespace,
 	}
 
-	o := &Obj{
+	o := Obj{
 		Name: name,
 		c:    c,
 		ctx:  ctx,
@@ -40,15 +40,15 @@ func InitObj(rm resourcemanagmentv1alpha1.ResourceManager, c client.Client, ctx 
 	return o
 }
 
-func (o *Obj) Stop() {
+func (o Obj) Stop() {
 	o.stop <- true
 }
 
-func (o *Obj) Run() {
+func (o Obj) Run() {
 	for {
 		select {
 		case <-o.stop:
-			o.l.Info(fmt.Sprintf("%s Got stop signal!\n", h.Name))
+			o.l.Info(fmt.Sprintf("%s Got stop signal!\n", o.Name))
 			return
 		default:
 			switch o.rm.Spec.Resources { // here we decide which handler to use

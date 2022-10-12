@@ -11,7 +11,7 @@ import (
 )
 
 // HandleNamespaceObj handle namespace objects that related to the resource-manager controller
-func (o *Obj) HandleNamespaceObj() {
+func (o Obj) HandleNamespaceObj() {
 	// get all the namespaces with the desired selector labels
 	namespacesToHandle, err := o.GetNamespacesByLabel()
 	if err != nil {
@@ -37,7 +37,7 @@ func (o *Obj) HandleNamespaceObj() {
 }
 
 // GetNamespacesByLabel get only namespaces that contains a specific label
-func (o *Obj) GetNamespacesByLabel() ([]v1.Namespace, error) {
+func (o Obj) GetNamespacesByLabel() ([]v1.Namespace, error) {
 
 	var listOfNamespaces []v1.Namespace
 	nsListObj := &v1.NamespaceList{}
@@ -56,7 +56,7 @@ func (o *Obj) GetNamespacesByLabel() ([]v1.Namespace, error) {
 }
 
 // deleteNamespace delete namespace obj
-func (o *Obj) deleteNamespace(namespace v1.Namespace) {
+func (o Obj) deleteNamespace(namespace v1.Namespace) {
 	err := o.c.Delete(o.ctx, namespace.DeepCopy(), &client.DeleteOptions{})
 	if err != nil {
 		o.l.Error(err, fmt.Sprintf("cannot delete namespaces\n"))
@@ -85,7 +85,7 @@ func (o Obj) handleTimeframe(namespace v1.Namespace) {
 
 // handleExpiry handle expiry type
 func (o Obj) handleExpiry(namespace v1.Namespace) {
-	expired, secondsUntilExpire := utils.IsObjExpired(namespace.CreationTimestamp, o.Spec.Condition[0].After)
+	expired, secondsUntilExpire := utils.IsObjExpired(namespace.CreationTimestamp, o.rm.Spec.Condition[0].After)
 	if expired {
 		switch o.rm.Spec.Action {
 		case "delete":

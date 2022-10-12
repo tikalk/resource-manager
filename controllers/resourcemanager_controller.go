@@ -22,7 +22,6 @@ import (
 
 	"github.com/tikalk/resource-manager/api/v1alpha1"
 	"github.com/tikalk/resource-manager/controllers/handlers"
-	"github.com/tikalk/resource-manager/controllers/new_handlers"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -35,7 +34,7 @@ import (
 type ResourceManagerReconciler struct {
 	client.Client
 	Scheme     *runtime.Scheme
-	collection map[types.NamespacedName]FHandler
+	collection map[types.NamespacedName]handlers.Obj
 }
 
 //+kubebuilder:rbac:groups=resource-management.tikalk.com,resources=resourcemanagers,verbs=get;list;watch;create;update;patch;delete
@@ -66,7 +65,7 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if err != nil {
 		if errors.IsNotFound(err) {
 			l.Info(fmt.Sprintf("ResourceManager object %s has Not Found!!! \n", req.NamespacedName))
-			r.collection[req.NamespacedName].Stop <- true
+			//r.collection[req.NamespacedName].Stop <- true
 
 			// delete the key from collection map
 			delete(r.collection, req.NamespacedName)
@@ -79,68 +78,27 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	fmt.Printf("found ResourceManager object: %s \n", resourceManagerObj.Name)
 
 	// config handler object
-	h := handlers.Obj{
-		Name: req.NamespacedName,
-		C:    r.Client,
-		Ctx:  ctx,
-		L:    l,
-		Spec: resourceManagerObj.Spec,
-	}
+	h := handlers.InitObj(*resourceManagerObj, r.Client, ctx, l)
 
-	l.Info(fmt.Sprintf(
-		"\n"+
-			" ResourceType: %s \n"+
-			" selectorLables %s \n"+
-			" action: %s \n"+
-			" condition: %s \n"+
-			" type: %s \n",
-		h.Spec.Resources,
-		h.Spec.Selector.MatchLabels,
-		h.Spec.Action,
-		h.Spec.Condition[0].After,
-		h.Spec.Condition[0].Type))
+	//// check if resource exists in our collection, if so, delete
+	//if _, ok := r.collection[h.Name]; ok {
+	//	l.Info(fmt.Sprintf("Stopping loop for %s\n", h.Name))
+	//	r.collection[h.Name]
+	//	// delete the key from collection map
+	//	delete(r.collection, h.Name)
+	//}
 
-	// check if resource exists in our collection, if so, delete
-	if _, ok := r.collection[h.Name]; ok {
-		l.Info(fmt.Sprintf("Stopping loop for %s\n", h.Name))
-		r.collection[h.Name].Stop <- true
-		// delete the key from collection map
-		delete(r.collection, h.Name)
-	}
+	// add handler to collection
+	r.collection[req.NamespacedName] = h
 
-	// create new collection
-	r.collection[h.Name] = new_handlers.InitFHandler()
-
-	r.collection[h.Name] = &new_handlers.FHandler{
-		F: func(stop chan bool) {
-			for {
-				select {
-				case <-stop:
-					l.Info(fmt.Sprintf("%s Got stop signal!\n", h.Name))
-					return
-				default:
-					switch h.Spec.Resources { // here we decide which handler to use
-					case "namespace":
-						h.HandleNamespaceObj()
-					}
-				}
-			}
-		},
-		stop: make(chan bool),
-	}
-
-	// export to new var
-	c := r.collection[h.Name]
-
-	// execute in a new thread
-	go c.F(c.Stop)
+	r.collection[req.NamespacedName].Run()
 
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ResourceManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.collection = make(map[types.NamespacedName]FHandler)
+	r.collection = make(map[types.NamespacedName]handlers.Obj)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ResourceManager{}).
 		Complete(r)
