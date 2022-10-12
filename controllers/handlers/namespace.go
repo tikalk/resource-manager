@@ -33,7 +33,7 @@ func (o Obj) HandleNamespaceObj() {
 		}
 
 	}
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 }
 
 // GetNamespacesByLabel get only namespaces that contains a specific label

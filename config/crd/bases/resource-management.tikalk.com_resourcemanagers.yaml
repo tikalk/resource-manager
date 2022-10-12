@@ -50,7 +50,6 @@ spec:
                     type:
                       type: string
                   required:
-                  - time
                   - type
                   type: object
                 type: array

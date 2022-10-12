@@ -31,6 +31,7 @@ func InitObj(rm resourcemanagmentv1alpha1.ResourceManager, c client.Client, ctx 
 	}
 
 	o := Obj{
+		rm:   rm,
 		Name: name,
 		c:    c,
 		ctx:  ctx,
@@ -45,6 +46,7 @@ func (o Obj) Stop() {
 }
 
 func (o Obj) Run() {
+	fmt.Printf("Processing object: %s \n", o.Name)
 	for {
 		select {
 		case <-o.stop:

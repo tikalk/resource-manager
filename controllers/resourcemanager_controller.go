@@ -65,7 +65,7 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if err != nil {
 		if errors.IsNotFound(err) {
 			l.Info(fmt.Sprintf("ResourceManager object %s has Not Found!!! \n", req.NamespacedName))
-			//r.collection[req.NamespacedName].Stop <- true
+			r.collection[req.NamespacedName].Stop()
 
 			// delete the key from collection map
 			delete(r.collection, req.NamespacedName)
@@ -80,18 +80,17 @@ func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// config handler object
 	h := handlers.InitObj(*resourceManagerObj, r.Client, ctx, l)
 
-	//// check if resource exists in our collection, if so, delete
-	//if _, ok := r.collection[h.Name]; ok {
-	//	l.Info(fmt.Sprintf("Stopping loop for %s\n", h.Name))
-	//	r.collection[h.Name]
-	//	// delete the key from collection map
-	//	delete(r.collection, h.Name)
-	//}
+	// check if resource exists in our collection, if so, delete
+	if _, ok := r.collection[h.Name]; ok {
+		l.Info(fmt.Sprintf("Stopping loop for %s\n", h.Name))
+		// delete the key from collection map
+		delete(r.collection, h.Name)
+	}
 
 	// add handler to collection
 	r.collection[req.NamespacedName] = h
 
-	r.collection[req.NamespacedName].Run()
+	go r.collection[req.NamespacedName].Run()
 
 	return ctrl.Result{}, nil
 }
