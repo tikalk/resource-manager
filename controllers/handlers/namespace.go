@@ -21,6 +21,7 @@ func (o Obj) HandleNamespaceObj() {
 
 	if len(namespacesToHandle) <= 0 {
 		fmt.Printf("%s: did not found any namespace with the requested label\n", o.Name)
+		time.Sleep(10 * time.Second)
 		return
 	}
 

@@ -12,6 +12,6 @@ spec:
   action: "delete"
   condition:
   - type: timeframe
-    time: "11:45"
+    time: "12:20"
 #    timeZone: "Asia/Jerusalem"
 
