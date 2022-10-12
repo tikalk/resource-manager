@@ -93,29 +93,29 @@ func extractCreationTime(kind string, obj interface{}) (time time.Time, err erro
 	return time, err
 }
 
-func (objectHandler *ObjectHandler) performObjectAction() (err error) {
-	switch objectHandler.resourceManager.Spec.Action {
+func (h *ObjectHandler) performObjectAction() (err error) {
+	switch h.resourceManager.Spec.Action {
 	case "delete":
-		err = objectHandler.performObjectDelete()
+		err = h.performObjectDelete()
 		break
 	case "patch":
-		err = objectHandler.performObjectPatch()
+		err = h.performObjectPatch()
 		break
 	default:
-		err = errors.New(fmt.Sprintf("objectAction: unexpected action %s", objectHandler.resourceManager.Spec.Action))
+		err = errors.New(fmt.Sprintf("objectAction: unexpected action %s", h.resourceManager.Spec.Action))
 	}
 	return err
 }
 
-func (objectHandler *ObjectHandler) performObjectDelete() (err error) {
+func (h *ObjectHandler) performObjectDelete() (err error) {
 	var opts metav1.DeleteOptions
-	switch objectHandler.resourceManager.Spec.ResourceKind {
+	switch h.resourceManager.Spec.ResourceKind {
 	case "Namespace":
-		err = objectHandler.clientset.CoreV1().Namespaces().Delete(context.Background(), objectHandler.fullname.Name, opts)
+		err = h.clientset.CoreV1().Namespaces().Delete(context.Background(), h.fullname.Name, opts)
 	case "Deployment":
-		err = objectHandler.clientset.AppsV1().Deployments(objectHandler.fullname.Namespace).Delete(context.Background(), objectHandler.fullname.Name, opts)
+		err = h.clientset.AppsV1().Deployments(h.fullname.Namespace).Delete(context.Background(), h.fullname.Name, opts)
 	default:
-		err = fmt.Errorf("objectDelete: unxpected object kind <%s>", objectHandler.resourceManager.Spec.ResourceKind)
+		err = fmt.Errorf("objectDelete: unxpected object kind <%s>", h.resourceManager.Spec.ResourceKind)
 	}
 	return err
 }
@@ -126,20 +126,20 @@ type patchUInt32Value struct {
 	Value uint32 `json:"value"`
 }
 
-func (objectHandler *ObjectHandler) performObjectPatch() (err error) {
+func (h *ObjectHandler) performObjectPatch() (err error) {
 	//var pt types.PatchType
 
 	//data := fmt.Sprintf(`{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}`, time.Now().String())
 	var data string
-	data = objectHandler.resourceManager.Spec.ActionParam
+	data = h.resourceManager.Spec.ActionParam
 
-	switch objectHandler.resourceManager.Spec.ResourceKind {
+	switch h.resourceManager.Spec.ResourceKind {
 	case "Namespace":
-		_, err = objectHandler.clientset.CoreV1().Namespaces().Patch(context.Background(), objectHandler.fullname.Name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{FieldManager: "kubectl-rollout"})
+		_, err = h.clientset.CoreV1().Namespaces().Patch(context.Background(), h.fullname.Name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{FieldManager: "kubectl-rollout"})
 	case "Deployment":
-		_, err = objectHandler.clientset.AppsV1().Deployments(objectHandler.fullname.Namespace).Patch(context.Background(), objectHandler.fullname.Name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{FieldManager: "kubectl-rollout"})
+		_, err = h.clientset.AppsV1().Deployments(h.fullname.Namespace).Patch(context.Background(), h.fullname.Name, types.StrategicMergePatchType, []byte(data), metav1.PatchOptions{FieldManager: "kubectl-rollout"})
 	default:
-		err = fmt.Errorf("objectDelete: unxpected object kind <%s>", objectHandler.resourceManager.Spec.ResourceKind)
+		err = fmt.Errorf("objectDelete: unxpected object kind <%s>", h.resourceManager.Spec.ResourceKind)
 	}
 	return err
 }
@@ -148,22 +148,22 @@ func (objectHandler *ObjectHandler) performObjectPatch() (err error) {
 // 	return o.resourceManager.Spec.ResourceKind
 // }
 
-func (objectHandler *ObjectHandler) Run() {
+func (h *ObjectHandler) Run() {
 	var wait time.Duration
-	if objectHandler.resourceManager.Spec.Condition.Timeframe != "" {
-		timeframe, _ := time.ParseDuration(objectHandler.resourceManager.Spec.Condition.Timeframe)
-		age := time.Now().Sub(objectHandler.creationTime)
+	if h.resourceManager.Spec.Condition.Timeframe != "" {
+		timeframe, _ := time.ParseDuration(h.resourceManager.Spec.Condition.Timeframe)
+		age := time.Now().Sub(h.creationTime)
 		wait = timeframe - age
 
-		objectHandler.log.Info(trace(fmt.Sprintf("object timeframe expiration <%s> timeframe <%s> age <%s> wait <%s>",
-			objectHandler.fullname,
+		h.log.Info(trace(fmt.Sprintf("object timeframe expiration <%s> timeframe <%s> age <%s> wait <%s>",
+			h.fullname,
 			timeframe.String(),
 			age.String(),
 			wait.String())))
-	} else if objectHandler.resourceManager.Spec.Condition.ExpireAt != "" {
-		expireAt, err := time.Parse("15:04", objectHandler.resourceManager.Spec.Condition.ExpireAt)
+	} else if h.resourceManager.Spec.Condition.ExpireAt != "" {
+		expireAt, err := time.Parse("15:04", h.resourceManager.Spec.Condition.ExpireAt)
 		if err != nil {
-			objectHandler.log.Error(err, trace(fmt.Sprintf("Failed to parse %s. Abort.", objectHandler.resourceManager.Spec.Condition.ExpireAt)))
+			h.log.Error(err, trace(fmt.Sprintf("Failed to parse %s. Abort.", h.resourceManager.Spec.Condition.ExpireAt)))
 			return
 		}
 
@@ -178,43 +178,43 @@ func (objectHandler *ObjectHandler) Run() {
 			wait = time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), expireAt.Hour(), expireAt.Minute(), 0, 0, tomorrow.Location()).Sub(now)
 		}
 
-		objectHandler.log.Info(trace(fmt.Sprintf("object time expiration <%s> expireAt <%s> now <%s> wait <%s>",
-			objectHandler.fullname,
+		h.log.Info(trace(fmt.Sprintf("object time expiration <%s> expireAt <%s> now <%s> wait <%s>",
+			h.fullname,
 			expireAt.String(),
 			now.String(),
 			wait)))
 	} else {
-		objectHandler.log.Error(errors.New("expiration is not configured"), trace(fmt.Sprintf("object handler <%s> aborted", objectHandler.fullname)))
+		h.log.Error(errors.New("expiration is not configured"), trace(fmt.Sprintf("object handler <%s> aborted", h.fullname)))
 		return
 	}
 
 	if wait <= 0 {
-		objectHandler.log.Info(trace(fmt.Sprintf("object already expired <%s>", objectHandler.fullname)))
+		h.log.Info(trace(fmt.Sprintf("object already expired <%s>", h.fullname)))
 	} else {
 		select {
-		case <-objectHandler.stopper:
-			objectHandler.log.Info(trace(fmt.Sprintf("objectHandler aborted for object<%s>", objectHandler.fullname)))
+		case <-h.stopper:
+			h.log.Info(trace(fmt.Sprintf("h aborted for object<%s>", h.fullname)))
 			return
 		case <-time.After(wait):
-			objectHandler.log.Info(trace(fmt.Sprintf("object expired <%s>", objectHandler.fullname)))
+			h.log.Info(trace(fmt.Sprintf("object expired <%s>", h.fullname)))
 			break
 		}
 	}
 
-	if objectHandler.resourceManager.Spec.DryRun {
-		objectHandler.log.Info(trace(fmt.Sprintf("dry-run performing object <%s> action <%s> ", objectHandler.fullname, objectHandler.resourceManager.Spec.Action)))
+	if h.resourceManager.Spec.DryRun {
+		h.log.Info(trace(fmt.Sprintf("dry-run performing object <%s> action <%s> ", h.fullname, h.resourceManager.Spec.Action)))
 	} else {
-		objectHandler.log.Info(trace(fmt.Sprintf("performing object <%s> action <%s>...", objectHandler.fullname, objectHandler.resourceManager.Spec.Action)))
-		err := objectHandler.performObjectAction()
+		h.log.Info(trace(fmt.Sprintf("performing object <%s> action <%s>...", h.fullname, h.resourceManager.Spec.Action)))
+		err := h.performObjectAction()
 		if err != nil {
-			objectHandler.log.Error(err, trace(fmt.Sprintf("object <%s> action <%s> failed", objectHandler.fullname, objectHandler.resourceManager.Spec.Action)))
+			h.log.Error(err, trace(fmt.Sprintf("object <%s> action <%s> failed", h.fullname, h.resourceManager.Spec.Action)))
 		} else {
-			objectHandler.log.Info(trace(fmt.Sprintf("object <%s> action <%s> finished", objectHandler.fullname, objectHandler.resourceManager.Spec.Action)))
+			h.log.Info(trace(fmt.Sprintf("object <%s> action <%s> finished", h.fullname, h.resourceManager.Spec.Action)))
 		}
 
 	}
 }
 
-func (ObjectHandler *ObjectHandler) Stop() {
-	close(ObjectHandler.stopper)
+func (h *ObjectHandler) Stop() {
+	close(h.stopper)
 }
