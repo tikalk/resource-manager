@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"reflect"
+	//"reflect"
 )
 
 type ResourceManagerHandler struct {
@@ -83,25 +83,25 @@ func (resourceManagerHandler *ResourceManagerHandler) Run() error {
 				go objectNamespaceHandler.Run()
 				// TODO: handle terminating state  - obj.(*v1.Namespace).Status.Phase == "Terminating"
 			},
-			UpdateFunc: func(oldObj interface{}, obj interface{}) {
-				objectNamespaceHandler, err := NewObjectNamespaceHandler(resourceManagerHandler.resourceManager, obj.(*v1.Namespace).Name, resourceManagerHandler.clientset, resourceManagerHandler.log)
-				if err != nil {
-					resourceManagerHandler.log.Error(err, fmt.Sprintf("NewObjectNamespaceHandler handler creating failed with error <%s> for resourceManagerHandler <%s>", err, resourceManagerHandler.resourceManager.Name))
-					return
-				}
-				//if objectNamespaceHandler.terminating {
-				//	resourceManagerHandler.log.Info(trace(fmt.Sprintf("Object recreating ignored: <%s> Terminating <%b>", objectNamespaceHandler.namespaceName, objectNamespaceHandler.terminating)))
-				//	return
-				//}
-				if reflect.DeepEqual(obj.(*v1.Namespace), oldObj.(*v1.Namespace)) {
-					resourceManagerHandler.log.Info(trace(fmt.Sprintf("Namespace is not changed <%s> for resourceManagerHandler <%s>. Update Ignored.", obj.(*v1.Namespace).Name, resourceManagerHandler.resourceManager.Name)))
-					return
-				}
-				resourceManagerHandler.log.Info(trace(fmt.Sprintf("Recreating namespace handler: <%s> for resourceManagerHandler <%s>", objectNamespaceHandler.namespaceName, resourceManagerHandler.resourceManager.Name)))
-				resourceManagerHandler.removeNamespaceHandler(objectNamespaceHandler.namespaceName)
-				resourceManagerHandler.addNamespaceHandler(objectNamespaceHandler)
-				go objectNamespaceHandler.Run()
-			},
+			//UpdateFunc: func(oldObj interface{}, obj interface{}) {
+			//	objectNamespaceHandler, err := NewObjectNamespaceHandler(resourceManagerHandler.resourceManager, obj.(*v1.Namespace).Name, resourceManagerHandler.clientset, resourceManagerHandler.log)
+			//	if err != nil {
+			//		resourceManagerHandler.log.Error(err, fmt.Sprintf("NewObjectNamespaceHandler handler creating failed with error <%s> for resourceManagerHandler <%s>", err, resourceManagerHandler.resourceManager.Name))
+			//		return
+			//	}
+			//	//if objectNamespaceHandler.terminating {
+			//	//	resourceManagerHandler.log.Info(trace(fmt.Sprintf("Object recreating ignored: <%s> Terminating <%b>", objectNamespaceHandler.namespaceName, objectNamespaceHandler.terminating)))
+			//	//	return
+			//	//}
+			//	if reflect.DeepEqual(obj.(*v1.Namespace), oldObj.(*v1.Namespace)) {
+			//		resourceManagerHandler.log.Info(trace(fmt.Sprintf("Namespace is not changed <%s> for resourceManagerHandler <%s>. Update Ignored.", obj.(*v1.Namespace).Name, resourceManagerHandler.resourceManager.Name)))
+			//		return
+			//	}
+			//	resourceManagerHandler.log.Info(trace(fmt.Sprintf("Recreating namespace handler: <%s> for resourceManagerHandler <%s>", objectNamespaceHandler.namespaceName, resourceManagerHandler.resourceManager.Name)))
+			//	resourceManagerHandler.removeNamespaceHandler(objectNamespaceHandler.namespaceName)
+			//	resourceManagerHandler.addNamespaceHandler(objectNamespaceHandler)
+			//	go objectNamespaceHandler.Run()
+			//},
 			DeleteFunc: func(obj interface{}) {
 				objectNamespaceHandler, err := NewObjectNamespaceHandler(resourceManagerHandler.resourceManager, obj.(*v1.Namespace).Name, resourceManagerHandler.clientset, resourceManagerHandler.log)
 				if err != nil {
