@@ -7,7 +7,6 @@ import (
 
 // IsObjExpired check if object has expired
 func IsObjExpired(creation time.Time, expiration string) (err error, secondsUntilExp int) {
-
 	now := time.Now()
 	objCreatedAt := creation                           // creation time
 	expireAfter, err := time.ParseDuration(expiration) // will be expired after (object life period)
@@ -18,7 +17,6 @@ func IsObjExpired(creation time.Time, expiration string) (err error, secondsUnti
 }
 
 func IsIntervalOccurred(timeframe string) (err error, secondsUntilTimeframe int) {
-
 	// parse timeframe to time object
 	timeframeTime, err := time.Parse("15:04", timeframe)
 	if err != nil {
