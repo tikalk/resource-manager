@@ -54,11 +54,12 @@ func createObjectsInformer(factory informers.SharedInformerFactory, kind string)
 	case "Namespace":
 		informer = factory.Core().V1().Namespaces().Informer()
 	default:
-		err = fmt.Errorf("invalid kind %s when getting an informer.", kind)
+		err = fmt.Errorf("invalid kind %s when getting an informer", kind)
 	}
 	return informer, err
 }
 
+// addObjHandler add ObjectHandler to collection if not exists
 func (h *ResourceManagerHandler) addObjHandler(objHandler *ObjectHandler) {
 	if _, ok := h.objHandlers[objHandler.fullname]; ok {
 		h.log.Error(errors.New("addObjHandler failed"), trace(fmt.Sprintf("object handler already registered <%s>.", objHandler.fullname)))
@@ -77,6 +78,7 @@ func (h *ResourceManagerHandler) removeObjHandelr(fullname types.NamespacedName)
 	delete(h.objHandlers, fullname)
 }
 
+// Run start listening to new objects
 func (h *ResourceManagerHandler) Run() error {
 
 	h.objectsInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{

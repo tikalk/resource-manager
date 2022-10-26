@@ -15,6 +15,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+// ObjectHandler manage a single object like deployment, namespace, etc...
+// according to the action definition provided by user like "delete" / "patch" an object
 type ObjectHandler struct {
 	resourceManager *v1alpha1.ResourceManager
 	object          interface{}
@@ -25,6 +27,7 @@ type ObjectHandler struct {
 	log             logr.Logger
 }
 
+// NewObjectHandler create a new ObjectHandler to manage a single kubernetes object
 func NewObjectHandler(resourceManager *v1alpha1.ResourceManager, obj interface{}, clientset *kubernetes.Clientset, log logr.Logger) (*ObjectHandler, error) {
 	// extract the NamespacedName of the object for storage
 	fullName, err := extractFullname(resourceManager.Spec.ResourceKind, obj)
@@ -50,6 +53,7 @@ func NewObjectHandler(resourceManager *v1alpha1.ResourceManager, obj interface{}
 	return objectHandler, nil
 }
 
+// extractFullname extract the full name of the object according to object kind
 func extractFullname(kind string, obj interface{}) (fullname types.NamespacedName, err error) {
 	switch kind {
 	case "Namespace":
@@ -62,6 +66,7 @@ func extractFullname(kind string, obj interface{}) (fullname types.NamespacedNam
 	return fullname, err
 }
 
+// extractCreationTime extract the creation time of the object according to object kind
 func extractCreationTime(kind string, obj interface{}) (time time.Time, err error) {
 	switch kind {
 	case "Namespace":
@@ -74,6 +79,7 @@ func extractCreationTime(kind string, obj interface{}) (time time.Time, err erro
 	return time, err
 }
 
+// performObjectAction executes the desired action on an object
 func (h *ObjectHandler) performObjectAction() (err error) {
 	switch h.resourceManager.Spec.Action {
 	case "delete":
@@ -129,6 +135,7 @@ func (h *ObjectHandler) performObjectPatch() (err error) {
 // 	return o.resourceManager.Spec.ResourceKind
 // }
 
+// Run calculates the expiration time of an object and perform the desired action when the time arrives
 func (h *ObjectHandler) Run() {
 	var wait time.Duration
 	if h.resourceManager.Spec.Condition.ExpireAfter != "" {
@@ -184,16 +191,17 @@ func (h *ObjectHandler) Run() {
 
 	if h.resourceManager.Spec.DryRun {
 		h.log.Info(trace(fmt.Sprintf("dry-run performing object <%s> action <%s> ", h.fullname, h.resourceManager.Spec.Action)))
-	} else {
-		h.log.Info(trace(fmt.Sprintf("performing object <%s> action <%s>...", h.fullname, h.resourceManager.Spec.Action)))
-		err := h.performObjectAction()
-		if err != nil {
-			h.log.Error(err, trace(fmt.Sprintf("object <%s> action <%s> failed", h.fullname, h.resourceManager.Spec.Action)))
-		} else {
-			h.log.Info(trace(fmt.Sprintf("object <%s> action <%s> finished", h.fullname, h.resourceManager.Spec.Action)))
-		}
-
+		return
 	}
+
+	h.log.Info(trace(fmt.Sprintf("performing object <%s> action <%s>...", h.fullname, h.resourceManager.Spec.Action)))
+	err := h.performObjectAction()
+	if err != nil {
+		h.log.Error(err, trace(fmt.Sprintf("object <%s> action <%s> failed", h.fullname, h.resourceManager.Spec.Action)))
+	} else {
+		h.log.Info(trace(fmt.Sprintf("object <%s> action <%s> finished", h.fullname, h.resourceManager.Spec.Action)))
+	}
+
 }
 
 func (h *ObjectHandler) Stop() {

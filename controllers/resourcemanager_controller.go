@@ -61,12 +61,14 @@ type ResourceManagerReconciler struct {
 	log       logr.Logger
 }
 
+// registerAndRunResourceManagerHandler add the handler to the collection and then run it
 func (r *ResourceManagerReconciler) registerAndRunResourceManagerHandler(resourceManagerName types.NamespacedName, resourceManagerHandler *ResourceManagerHandler) {
 	r.resourceManagerHandlers[resourceManagerName] = resourceManagerHandler
 	go resourceManagerHandler.Run()
 
 }
 
+// findResourceManagerHandler will look for the resource manager handler object in the collection
 func (r *ResourceManagerReconciler) findResourceManagerHandler(resourceManagerName types.NamespacedName) *ResourceManagerHandler {
 	return r.resourceManagerHandlers[resourceManagerName]
 }
@@ -89,9 +91,8 @@ func (r *ResourceManagerReconciler) removeResourceManagerHandler(resourceManager
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 
-//var ctx context.Context
-//var initialized bool
-//
+// var ctx context.Context
+// var initialized bool
 func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 
 	r.log.Info(trace(fmt.Sprintf("ResourceManager object <%s> reconciled. Reconciling...", request.NamespacedName)))
