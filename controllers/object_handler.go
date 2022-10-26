@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/go-logr/logr"
 	"github.com/tikalk/resource-manager/api/v1alpha1"
+	"github.com/tikalk/resource-manager/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -94,6 +95,7 @@ func (h *ObjectHandler) performObjectAction() (err error) {
 	return err
 }
 
+// performObjectDelete delete a single object
 func (h *ObjectHandler) performObjectDelete() (err error) {
 	var opts metav1.DeleteOptions
 	switch h.resourceManager.Spec.ResourceKind {
@@ -113,6 +115,7 @@ type patchUInt32Value struct {
 	Value uint32 `json:"value"`
 }
 
+// performObjectPatch patch a single object
 func (h *ObjectHandler) performObjectPatch() (err error) {
 	//var pt types.PatchType
 
@@ -138,55 +141,44 @@ func (h *ObjectHandler) performObjectPatch() (err error) {
 // Run calculates the expiration time of an object and perform the desired action when the time arrives
 func (h *ObjectHandler) Run() {
 	var wait time.Duration
-	if h.resourceManager.Spec.Condition.ExpireAfter != "" {
-		expireAfter, _ := time.ParseDuration(h.resourceManager.Spec.Condition.ExpireAfter)
-		age := time.Now().Sub(h.creationTime)
-		wait = expireAfter - age
+	//now := time.Now()
 
-		h.log.Info(trace(fmt.Sprintf("object age expiration <%s> after <%s> age <%s> wait <%s>",
-			h.fullname,
-			expireAfter.String(),
-			age.String(),
-			wait.String())))
-	} else if h.resourceManager.Spec.Condition.ExpireAt != "" {
-		expireAt, err := time.Parse("15:04", h.resourceManager.Spec.Condition.ExpireAt)
-		if err != nil {
-			h.log.Error(err, trace(fmt.Sprintf("Failed to parse %s. Abort.", h.resourceManager.Spec.Condition.ExpireAt)))
-			return
-		}
-
-		now := time.Now()
-
-		if expireAt.Hour()*60+expireAt.Minute() > now.Hour()*60+now.Minute() {
-			// Today
-			wait = time.Date(now.Year(), now.Month(), now.Day(), expireAt.Hour(), expireAt.Minute(), 0, 0, now.Location()).Sub(now)
-		} else {
-			// Tomorrow
-			tomorrow := now.Add(24 * time.Hour)
-			wait = time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), expireAt.Hour(), expireAt.Minute(), 0, 0, tomorrow.Location()).Sub(now)
-		}
-
-		h.log.Info(trace(fmt.Sprintf("object time expiration <%s> expireAt <%s> now <%s> wait <%s>",
-			h.fullname,
-			expireAt.String(),
-			now.String(),
-			wait)))
-	} else {
+	cond := h.resourceManager.Spec.Condition
+	if cond.ExpireAt == "" && cond.ExpireAfter == "" {
 		h.log.Error(errors.New("expiration is not configured"), trace(fmt.Sprintf("object handler <%s> aborted", h.fullname)))
 		return
 	}
 
+	if cond.ExpireAfter != "" {
+		err, wait := utils.IsObjExpired(h.creationTime, h.resourceManager.Spec.Condition.ExpireAfter)
+		if err != nil {
+			h.log.Error(errors.New("cannot calculate expiration time"), trace(fmt.Sprintf("object handler <%s> aborted", h.fullname)))
+			return
+		}
+		h.log.Info(trace(fmt.Sprintf("object will be expired in <%d> seconds", wait)))
+
+	} else if cond.ExpireAt != "" {
+		err, wait := utils.IsIntervalOccurred(h.resourceManager.Spec.Condition.ExpireAt)
+		if err != nil {
+			h.log.Error(errors.New("cannot calculate timeframe"), trace(fmt.Sprintf("object handler <%s> aborted", h.fullname)))
+			return
+		}
+		h.log.Info(trace(fmt.Sprintf("object will be expired in <%d> seconds", wait)))
+
+	}
+
 	if wait <= 0 {
 		h.log.Info(trace(fmt.Sprintf("object already expired <%s>", h.fullname)))
-	} else {
-		select {
-		case <-h.stopper:
-			h.log.Info(trace(fmt.Sprintf("h aborted for object<%s>", h.fullname)))
-			return
-		case <-time.After(wait):
-			h.log.Info(trace(fmt.Sprintf("object expired <%s>", h.fullname)))
-			break
-		}
+		return
+	}
+
+	select {
+	case <-h.stopper:
+		h.log.Info(trace(fmt.Sprintf("h aborted for object<%s>", h.fullname)))
+		return
+	case <-time.After(wait):
+		h.log.Info(trace(fmt.Sprintf("object expired <%s>", h.fullname)))
+		break
 	}
 
 	if h.resourceManager.Spec.DryRun {

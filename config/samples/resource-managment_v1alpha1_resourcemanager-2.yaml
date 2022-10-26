@@ -22,7 +22,7 @@ spec:
   action: delete
   expiration:
 #    at: 18:57
-    after: "2m"
+    after: "1m"
   # OR
   # - type: time
   #   interval: daily
