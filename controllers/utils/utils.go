@@ -16,7 +16,7 @@ func IsObjExpired(creation time.Time, expiration string) (err error, secondsUnti
 	return err, secondsUntilExp
 }
 
-func IsIntervalOccurred(timeframe string) (err error, secondsUntilTimeframe int) {
+func IsIntervalOccurred(now time.Time, timeframe string) (err error, secondsUntilTimeframe int) {
 	// parse timeframe to time object
 	timeframeTime, err := time.Parse("15:04", timeframe)
 	if err != nil {
@@ -25,7 +25,7 @@ func IsIntervalOccurred(timeframe string) (err error, secondsUntilTimeframe int)
 	}
 
 	// current hour in the same time format "15:04"
-	nowTime, err := time.Parse("15:04", time.Now().Format("15:04"))
+	nowTime, err := time.Parse("15:04", now.Format("15:04"))
 	if err != nil {
 		fmt.Println("Could not parse time:", err)
 		return err, 0

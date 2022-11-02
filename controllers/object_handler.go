@@ -140,8 +140,8 @@ func (h *ObjectHandler) performObjectPatch() (err error) {
 
 // Run calculates the expiration time of an object and perform the desired action when the time arrives
 func (h *ObjectHandler) Run() {
-	var wait time.Duration
-	//now := time.Now()
+	var secLeft int
+	var err error
 
 	cond := h.resourceManager.Spec.Condition
 	if cond.ExpireAt == "" && cond.ExpireAfter == "" {
@@ -150,24 +150,27 @@ func (h *ObjectHandler) Run() {
 	}
 
 	if cond.ExpireAfter != "" {
-		err, wait := utils.IsObjExpired(h.creationTime, h.resourceManager.Spec.Condition.ExpireAfter)
+		fmt.Println("\n\n\n i'm in expire after")
+		err, secLeft = utils.IsObjExpired(h.creationTime, h.resourceManager.Spec.Condition.ExpireAfter)
+		fmt.Printf("\n\n\n seconds left: %d \n\n\n", secLeft)
 		if err != nil {
 			h.log.Error(errors.New("cannot calculate expiration time"), trace(fmt.Sprintf("object handler <%s> aborted", h.fullname)))
 			return
 		}
-		h.log.Info(trace(fmt.Sprintf("object will be expired in <%d> seconds", wait)))
+		h.log.Info(trace(fmt.Sprintf("object will be expired in <%d> seconds", secLeft)))
 
 	} else if cond.ExpireAt != "" {
-		err, wait := utils.IsIntervalOccurred(h.resourceManager.Spec.Condition.ExpireAt)
+		fmt.Println("\n\n\n i'm in expire at")
+		err, secLeft = utils.IsIntervalOccurred(time.Now(), h.resourceManager.Spec.Condition.ExpireAt)
 		if err != nil {
 			h.log.Error(errors.New("cannot calculate timeframe"), trace(fmt.Sprintf("object handler <%s> aborted", h.fullname)))
 			return
 		}
-		h.log.Info(trace(fmt.Sprintf("object will be expired in <%d> seconds", wait)))
+		h.log.Info(trace(fmt.Sprintf("object will be expired in <%d> seconds", secLeft)))
 
 	}
 
-	if wait <= 0 {
+	if secLeft <= 0 {
 		h.log.Info(trace(fmt.Sprintf("object already expired <%s>", h.fullname)))
 		return
 	}
@@ -176,7 +179,7 @@ func (h *ObjectHandler) Run() {
 	case <-h.stopper:
 		h.log.Info(trace(fmt.Sprintf("h aborted for object<%s>", h.fullname)))
 		return
-	case <-time.After(wait):
+	case <-time.After(time.Duration(secLeft) * time.Second):
 		h.log.Info(trace(fmt.Sprintf("object expired <%s>", h.fullname)))
 		break
 	}
@@ -187,7 +190,7 @@ func (h *ObjectHandler) Run() {
 	}
 
 	h.log.Info(trace(fmt.Sprintf("performing object <%s> action <%s>...", h.fullname, h.resourceManager.Spec.Action)))
-	err := h.performObjectAction()
+	err = h.performObjectAction()
 	if err != nil {
 		h.log.Error(err, trace(fmt.Sprintf("object <%s> action <%s> failed", h.fullname, h.resourceManager.Spec.Action)))
 	} else {
