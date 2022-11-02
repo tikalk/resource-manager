@@ -1,26 +1,26 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    control-plane: resource-manager
-  name: system
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: resource-manager
-  namespace: system
+  name: {{ template "resource-manager-operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
-    control-plane: resource-manager
+    control-plane: {{ .Release.Name }}
+    app: {{ template "resource-manager-operator.name" . }}
+    chart: {{ template "resource-manager-operator.chart" . }}
+    release: {{ .Release.Name }}
 spec:
   selector:
     matchLabels:
-      control-plane: resource-manager
-  replicas: 1
+      control-plane: {{ .Release.Name }}
+      app: {{ template "resource-manager-operator.name" . }}
+      release: {{ .Release.Name }}
+  replicas: {{ .Values.replicaCount }}
   template:
     metadata:
       labels:
-        control-plane: resource-manager
+        app: {{ template "resource-manager-operator.name" . }}
+        control-plane: {{ .Release.Name }}
+        release: {{ .Release.Name }}
     spec:
       securityContext:
         runAsNonRoot: true
@@ -29,8 +29,8 @@ spec:
         - /manager
         args:
         - --leader-elect=false
-        image: controller:latest
-        name: manager
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        name: "{{ .Release.Name }}-{{ .Chart.Name }}"
         securityContext:
           allowPrivilegeEscalation: false
         livenessProbe:
