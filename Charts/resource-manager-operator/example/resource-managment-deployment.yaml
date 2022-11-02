@@ -13,18 +13,7 @@ spec:
     matchExpressions:
       - { key: tier, operator: In, values: [ cache ] }
       - { key: environment, operator: NotIn, values: [ dev, dev2 ] }
-#  namespaceSelector: {}
-#    matchLabels:
-#      component: redis
-#    matchExpressions:
-#      - { key: tier, operator: In, values: [ cache ] }
-#      - { key: environment, operator: NotIn, values: [ dev ] }
   action: delete
   expiration:
 #    at: 18:57
     after: "1m"
-  # OR
-  # - type: time
-  #   interval: daily
-  #   time: "20:59:59"
-#status:

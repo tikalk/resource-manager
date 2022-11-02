@@ -13,25 +13,6 @@ spec:
     matchExpressions:
       - { key: tier, operator: In, values: [ cache ] }
       - { key: environment, operator: NotIn, values: [ dev, dev2 ] }
-#  namespaces:
-#    - qa1
-#    - qa2
-#  namespaceSelector: {}
-#  namespaceSelector:
-#    matchLabels:
-#      component: redis
-#    matchExpressions:
-#      - { key: tier, operator: In, values: [ cache ] }
-#      - { key: environment, operator: NotIn, values: [ dev ] }
-#  action: delete
-  action: patch
-  actionParam: '{"metadata":{"annotations":{"resource-management.tikalk.com/patched":"true"}}}'
-
   expiration:
 #    at: 18:57
     after: "2m"
-  # OR
-  # - type: time
-  #   interval: daily
-  #   time: "20:59:59"
-#status:
