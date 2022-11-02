@@ -28,31 +28,25 @@ type ResourceManagerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Active bool `json:"active,omitempty"`
-	DryRun bool `json:"dry-run,omitempty"`
+	Disabled bool `json:"disabled,omitempty"`
+	DryRun   bool `json:"dry-run,omitempty"`
 
-	// TODO: add validation
-	Resources string                `json:"resources"`
-	Selector  *metav1.LabelSelector `json:"selector"`
+	//ManagedResource ResourceSelector `json:",inline"`
+	ResourceKind string                `json:"resourceKind"`
+	Selector     *metav1.LabelSelector `json:"selector"`
+	//NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
 	// TODO: add validation + enum
-	Action string `json:"action"`
+	Action      string `json:"action"`
+	ActionParam string `json:"actionParam,omitempty"`
 
-	Condition []ExpiryCondition `json:"condition"`
+	Condition Expiration `json:"expiration"`
 }
 
-type Condition struct {
-	Type string `json:"type"`
+type Expiration struct {
+	ExpireAt    string `json:"at,omitempty"`
+	ExpireAfter string `json:"after,omitempty"`
 }
-
-type ExpiryCondition struct {
-	Condition `json:",inline"`
-	After     string `json:"after"`
-}
-
-// type IntervalCondition struct {
-// 	Condition
-// }
 
 // ResourceManagerStatus defines the observed state of ResourceManager
 type ResourceManagerStatus struct {

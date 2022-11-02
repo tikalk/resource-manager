@@ -38,24 +38,21 @@ spec:
               action:
                 description: 'TODO: add validation + enum'
                 type: string
-              active:
+              actionParam:
+                type: string
+              disabled:
                 type: boolean
-              condition:
-                items:
-                  properties:
-                    after:
-                      type: string
-                    type:
-                      type: string
-                  required:
-                  - after
-                  - type
-                  type: object
-                type: array
               dry-run:
                 type: boolean
-              resources:
-                description: 'TODO: add validation'
+              expiration:
+                properties:
+                  after:
+                    type: string
+                  at:
+                    type: string
+                type: object
+              resourceKind:
+                description: ManagedResource ResourceSelector `json:",inline"`
                 type: string
               selector:
                 description: A label selector is a label query over a set of resources.
@@ -107,8 +104,8 @@ spec:
                 x-kubernetes-map-type: atomic
             required:
             - action
-            - condition
-            - resources
+            - expiration
+            - resourceKind
             - selector
             type: object
           status:
