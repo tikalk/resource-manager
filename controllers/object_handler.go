@@ -134,10 +134,6 @@ func (h *ObjectHandler) performObjectPatch() (err error) {
 	return err
 }
 
-// func (o *ObjectHandler) getObjType() string {
-// 	return o.resourceManager.Spec.ResourceKind
-// }
-
 // Run calculates the expiration time of an object and perform the desired action when the time arrives
 func (h *ObjectHandler) Run() {
 	var secLeft int
@@ -150,7 +146,6 @@ func (h *ObjectHandler) Run() {
 	}
 
 	if cond.ExpireAfter != "" {
-		fmt.Println("\n\n\n i'm in expire after")
 		err, secLeft = utils.IsObjExpired(h.creationTime, h.resourceManager.Spec.Condition.ExpireAfter)
 		fmt.Printf("\n\n\n seconds left: %d \n\n\n", secLeft)
 		if err != nil {
@@ -160,7 +155,6 @@ func (h *ObjectHandler) Run() {
 		h.log.Info(trace(fmt.Sprintf("object will be expired in <%d> seconds", secLeft)))
 
 	} else if cond.ExpireAt != "" {
-		fmt.Println("\n\n\n i'm in expire at")
 		err, secLeft = utils.IsIntervalOccurred(time.Now(), h.resourceManager.Spec.Condition.ExpireAt)
 		if err != nil {
 			h.log.Error(errors.New("cannot calculate timeframe"), trace(fmt.Sprintf("object handler <%s> aborted", h.fullname)))
