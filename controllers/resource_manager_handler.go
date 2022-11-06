@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"github.com/go-logr/logr"
 	v1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	//"reflect"
 )
 
@@ -30,6 +29,7 @@ func NewResourceManagerHandler(resourceManager *v1alpha1.ResourceManager, client
 		opts.LabelSelector = selector.String()
 	})
 
+	fmt.Printf("\n\n\n\n Selector: %s \n\n\n\n", selector.String())
 	factory := informers.NewSharedInformerFactoryWithOptions(clientset, 0, informers.WithNamespace(resourceManager.Namespace), labelOptions)
 
 	objectsInformer, err := createObjectsInformer(factory, resourceManager.Spec.ResourceKind)
@@ -80,9 +80,26 @@ func (h *ResourceManagerHandler) removeObjHandelr(fullname types.NamespacedName)
 
 // Run start listening to new objects
 func (h *ResourceManagerHandler) Run() error {
-
+	h.log.Info("\n\n\n\n Creating informer \n\n\n\n")
+	//nsListObj := &v1.NamespaceList{}
+	//
+	//nsListObj, err := h.clientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+	//if err != nil {
+	//	fmt.Print("unable to fetch namespaces")
+	//	fmt.Println(err)
+	//}
+	//
+	//if len(nsListObj.Items) != 0 {
+	//	for _, item := range nsListObj.Items {
+	//		fmt.Println("\nXXXXXXXXXX")
+	//		fmt.Printf("\n found namespace: %s lables: %s \n", item.Name, item.Labels)
+	//	}
+	//} else {
+	//	fmt.Println("did not find namespaces")
+	//}
 	h.objectsInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
+			h.log.Info("\n\n\n\n Creating object handler \n\n\n\n")
 			objectHandler, err := NewObjectHandler(h.resourceManager, obj, h.clientset, h.log)
 			if err != nil {
 				h.log.Error(err, fmt.Sprintf("NewObjectHandler handler creating failed with error <%s>.", err))

@@ -18,11 +18,28 @@ var _ = Context("Inside of a ResourceManager", func() {
 	SetupTest(ctx)
 
 	Describe("when no existing resources exist", func() {
-		It("when creating a new resource manager object and a namespace obj and wait one minute", func() {
+		It("when creating a new resource manager object and a namespace obj and wait 20 seconds", func() {
+
+			// create new namespace object
+			myNamespaceObj := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{
+				Name: "xxx",
+				Labels: map[string]string{
+					"env": "development",
+				},
+			},
+			}
+
+			err := k8sClient.Create(ctx, myNamespaceObj)
+			Expect(err).NotTo(HaveOccurred(), "failed to create test 'namespace' resource")
+
+			//validate creation
+			nsObj, _ := getNsByName(ctx, myNamespaceObj.Name)
+			Expect(string(nsObj.Status.Phase)).Should(Equal("Active"))
+
 			myResourceManagerObj := &resourcemanagmentv1alpha1.ResourceManager{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-resource-manager",
-					Namespace: "default",
+					Name:      "resource-manager-sample",
+					Namespace: "xxx",
 				},
 				Spec: resourcemanagmentv1alpha1.ResourceManagerSpec{
 					Disabled:     false,
@@ -30,54 +47,55 @@ var _ = Context("Inside of a ResourceManager", func() {
 					ResourceKind: "Namespace",
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"name": "managed-namespace",
+							"env": "development",
 						},
 					},
 					Action: "delete",
 					Condition: resourcemanagmentv1alpha1.Expiration{
-						ExpireAfter: "1s",
+						ExpireAfter: "5s",
 					},
 				},
 			}
 
-			err := k8sClient.Create(ctx, myResourceManagerObj)
+			err = k8sClient.Create(ctx, myResourceManagerObj)
 			Expect(err).NotTo(HaveOccurred(), "failed to create test 'ResourceManager' resource")
 
 			rmObj := &resourcemanagmentv1alpha1.ResourceManager{}
 			Eventually(
-
-				getResourceFunc(ctx, client.ObjectKey{Name: "test-resource-manager",
+				getResourceFunc(ctx, client.ObjectKey{Name: "resource-manager-sample",
 					Namespace: myResourceManagerObj.Namespace}, rmObj),
-
 				time.Second*5, time.Millisecond*500).Should(BeNil())
 
 			Expect(rmObj.Spec.Action).To(Equal("delete"))
-			Expect(rmObj.Spec.Condition.ExpireAfter).To(Equal("1s"))
-
-			// create namespace obj
-			myNamespaceObj := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{
-				Name: "test-namespace",
-				Labels: map[string]string{
-					"name": "managed-namespace",
-				},
-			},
-			}
-			err = k8sClient.Create(ctx, myNamespaceObj)
-			Expect(err).NotTo(HaveOccurred(), "failed to create test 'namespace' resource")
-
-			// validate creation
-			nsObj, _ := getResourceByName(ctx, myNamespaceObj.Name)
-			Expect(string(nsObj.Status.Phase)).Should(Equal("Active"))
+			Expect(rmObj.Spec.Condition.ExpireAfter).To(Equal("5s"))
 			time.Sleep(10 * time.Second)
 
+			//nsListObj := &v1.NamespaceList{}
+			//
+			//if err := k8sClient.List(ctx, nsListObj, &client.ListOptions{
+			//	LabelSelector: labels.SelectorFromSet(map[string]string{
+			//		"env": "development",
+			//	})}); err != nil {
+			//	fmt.Print("unable to fetch namespaces")
+			//}
+			//
+			//if len(nsListObj.Items) != 0 {
+			//	for _, item := range nsListObj.Items {
+			//		fmt.Printf("\n found namespace: %s lables: %s \n", item.Name, item.Labels)
+			//	}
+			//} else {
+			//	fmt.Println("did not find namespaces")
+			//}
+
+			//validate deletion
+			//err = k8sClient.Delete(ctx, myNamespaceObj)
+			//Expect(err).NotTo(HaveOccurred(), "failed to manually delete test 'xxx' resource")
+
+			ns, _ := getNsByName(ctx, "xxx")
+			Expect(string(ns.Status.Phase)).To(Not(Equal("Active")))
+
 		})
 
-		It("this namespace obj should no long be Active", func() {
-
-			// validate deletion
-			nsObj, _ := getResourceByName(ctx, "test-namespace")
-			Expect(string(nsObj.Status.Phase)).To(Not(Equal("Active")))
-		})
 	})
 })
 
@@ -87,13 +105,10 @@ func getResourceFunc(ctx context.Context, key client.ObjectKey, obj client.Objec
 	}
 }
 
-func getResourceByName(ctx context.Context, name string) (*v1.Namespace, error) {
-
+func getNsByName(ctx context.Context, name string) (*v1.Namespace, error) {
 	nsObj := &v1.Namespace{}
-
 	if err := k8sClient.Get(ctx, client.ObjectKey{Name: name}, nsObj); err != nil {
 		return nil, nil
 	}
-
 	return nsObj, nil
 }
