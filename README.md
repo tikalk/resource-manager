@@ -198,10 +198,10 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 
 
-<!-- CONTACT -->
-## Contact
+<!-- Creators -->
+## Creators
 
-Your Name - [@your_twitter](https://twitter.com/your_username) - email@example.com
+Daniel Rozner, Gaby Tal, Amit Karni, Boris Komraz
 
 Project Link: [https://github.com/tikalk/resource-manager](https://github.com/tikalk/resource-manager)
 
