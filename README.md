@@ -12,7 +12,6 @@
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
 [![LinkedIn][linkedin-shield]][linkedin-url]
 
 
@@ -71,19 +70,11 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
-
 The Resource-Manager operator has built to automatically manage your kubernetes objects.
 
 Here's why:
 * You can easily create scheduled policies that will allow you to manage your kubernetes objects 
 * You shouldn't be doing the same tasks over and over like deleting some pods or namespaces
-
-
-### Built With
-
-* [Operator-SDK](https://sdk.operatorframework.io/)
-* [Go](https://go.dev/)
 
 
 <!-- GETTING STARTED -->
@@ -166,6 +157,7 @@ spec:
 ```
 
 
+---
 
 <!-- ROADMAP -->
 ## Roadmap
@@ -190,7 +182,7 @@ Contributions are what make the open source community such an amazing place to b
 <!-- LICENSE -->
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the MIT License.
 
 
 
@@ -206,16 +198,15 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/othneildrew/Best-README-Template.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/tikalk/resource-manager.svg?style=for-the-badge
 [contributors-url]: https://github.com/tikalk/resource-manager/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/othneildrew/Best-README-Template.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/tikalk/resource-manager.svg?style=for-the-badge
 [forks-url]: https://github.com/tikalk/resource-manager/network/members
-[stars-shield]: https://img.shields.io/github/stars/othneildrew/Best-README-Template.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/tikalk/resource-manager.svg?style=for-the-badge
 [stars-url]: https://github.com/tikalk/resource-manager/stargazers
-[issues-shield]: https://img.shields.io/github/issues/othneildrew/Best-README-Template.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/tikalk/resource-manager?style=for-the-badge
 [issues-url]: https://github.com/tikalk/resource-manager/issues
-[license-shield]: https://img.shields.io/github/license/othneildrew/Best-README-Template.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/tikalk/resource-manager?style=for-the-badge
 [license-url]: https://github.com/tikalk/resource-manager/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://il.linkedin.com/company/tikal-knowledge
-[product-screenshot]: images/screenshot.png
