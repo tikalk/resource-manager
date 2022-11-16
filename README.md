@@ -89,10 +89,6 @@ Here's why:
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
-
-
 ### Installation
 
 1. add the helm repo
@@ -107,7 +103,7 @@ To get a local copy up and running follow these simple example steps.
 
 
 <!-- USAGE EXAMPLES -->
-##  Simple
+###  Usage
 Let's say you want to give a specific deployments only 8 hours to live.
 You can create this kind of policy by applying a *ResourceManager* object.
 
@@ -128,7 +124,7 @@ spec:
     after: "8h"
 ```
 ###
-## Timeframe
+### Timeframe
 You can also delete a resource within a specific hour by using the 'at' key. let's say 12:00
 
 Delete a specific deployment on 12:00, on a daily basis
@@ -148,7 +144,7 @@ spec:
     at: "12:00"
 ```
 
-## Dry-run
+### Dry-run
 
 Add the 'dry-run' key for only validate and verify the action
 
@@ -201,7 +197,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- Creators -->
 ## Creators
 
-Daniel Rozner, Gaby Tal, Amit Karni, Boris Komraz
+[Daniel Rozner](https://github.com/daniel-ro), [Gaby Tal](https://github.com/gabytal), [Amit Karni](https://github.com/Amitk3293), [Boris Komraz](https://github.com/bkomraz1)
 
 
 
