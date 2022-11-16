@@ -76,7 +76,7 @@
 The Resource-Manager operator has built to automatically manage your kubernetes objects.
 
 Here's why:
-* You can easily create schedulded policies that will allow you to manage your kubernetes objects 
+* You can easily create scheduled policies that will allow you to manage your kubernetes objects 
 * You shouldn't be doing the same tasks over and over like deleting some pods or namespaces
 
 
@@ -202,8 +202,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ## Creators
 
 Daniel Rozner, Gaby Tal, Amit Karni, Boris Komraz
-
-Project Link: [https://github.com/tikalk/resource-manager](https://github.com/tikalk/resource-manager)
 
 
 
