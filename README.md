@@ -18,13 +18,10 @@
 
 <!-- PROJECT LOGO -->
 <br />
-<p align="center">
-  <a href="https://github.com/othneildrew/Best-README-Template">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
-
   <h3 align="center">Resource Manager Operator</h3>
 
+<p align="center">
+    <img src="images/logo.png" alt="Logo" width="200" height="200">
   <p align="center">
     Auto-manage  k8s resources
     <br />
