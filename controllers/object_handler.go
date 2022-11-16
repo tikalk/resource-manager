@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
 	"github.com/tikalk/resource-manager/api/v1alpha1"
 	"github.com/tikalk/resource-manager/controllers/utils"
@@ -11,7 +13,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -193,6 +194,7 @@ func (h *ObjectHandler) Run() {
 
 }
 
+// Stop will be called, When the ObjectHandler requires to stop.
 func (h *ObjectHandler) Stop() {
 	close(h.stopper)
 }

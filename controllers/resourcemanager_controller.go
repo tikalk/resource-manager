@@ -19,10 +19,11 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"os"
 	"runtime"
 	"time"
+
+	"k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/go-logr/logr"
 	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
@@ -38,6 +39,7 @@ import (
 
 	zaplogfmt "github.com/sykesm/zap-logfmt"
 	uzap "go.uber.org/zap"
+
 	//"go.uber.org/zap/zapcore"
 	//logf "sigs.k8s.io/controller-runtime/pkg/log"
 	//"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -93,6 +95,9 @@ func (r *ResourceManagerReconciler) removeResourceManagerHandler(resourceManager
 
 // var ctx context.Context
 // var initialized bool
+
+// Reconcile is responsible for enforcing the desired CR state on the actual state of the system.
+// It runs each time an event occurs on a watched CR or resource
 func (r *ResourceManagerReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 
 	r.log.Info(trace(fmt.Sprintf("ResourceManager object <%s> reconciled. Reconciling...", request.NamespacedName)))
@@ -167,6 +172,7 @@ func (r *ResourceManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// trace function adds a tracing level to the logs
 func trace(msg string) string {
 	pc, file, line, ok := runtime.Caller(1)
 	if !ok {

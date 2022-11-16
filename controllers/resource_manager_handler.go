@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"fmt"
+
 	"github.com/go-logr/logr"
 	v1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
@@ -24,6 +25,7 @@ type ResourceManagerHandler struct {
 	log             logr.Logger
 }
 
+// NewResourceManagerHandler registers a resource-specific Resource Manager handler and acts according to it's values.
 func NewResourceManagerHandler(resourceManager *v1alpha1.ResourceManager, clientset *kubernetes.Clientset, log logr.Logger) (*ResourceManagerHandler, error) {
 	selector, _ := metav1.LabelSelectorAsSelector(resourceManager.Spec.Selector)
 	labelOptions := informers.WithTweakListOptions(func(opts *metav1.ListOptions) {
@@ -47,6 +49,7 @@ func NewResourceManagerHandler(resourceManager *v1alpha1.ResourceManager, client
 	}, nil
 }
 
+// createObjectsInformer creates an object informer (Deployment or Namespace) for the relevant object.
 func createObjectsInformer(factory informers.SharedInformerFactory, kind string) (informer cache.SharedIndexInformer, err error) {
 	switch kind {
 	case "Deployment":
@@ -69,6 +72,7 @@ func (h *ResourceManagerHandler) addObjHandler(objHandler *ObjectHandler) {
 	h.objHandlers[objHandler.fullname] = objHandler
 }
 
+// removeObjHandelr , If necessary, removes the ObjectHandler from the collection
 func (h *ResourceManagerHandler) removeObjHandelr(fullname types.NamespacedName) {
 	if _, ok := h.objHandlers[fullname]; !ok {
 		h.log.Error(errors.New("removeObjHandelr failed"), trace(fmt.Sprintf("object handler removing failed <%s>.", fullname)))
@@ -108,6 +112,7 @@ func (h *ResourceManagerHandler) Run() error {
 	return nil
 }
 
+// Stop abort the calculation of the expiration time.
 func (h *ResourceManagerHandler) Stop() {
 	close(h.stopper)
 }
