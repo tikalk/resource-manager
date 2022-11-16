@@ -128,10 +128,10 @@ spec:
     after: "8h"
 ```
 ###
-#
+## Timeframe
 You can also delete a resource within a specific hour by using the 'at' key. let's say 12:00
 
-Delete a specific deployment on a specific hour on daily basis
+Delete a specific deployment on 12:00, on a daily basis
 ```yaml
 apiVersion: resource-management.tikalk.com/v1alpha1
 kind: ResourceManager
@@ -148,9 +148,9 @@ spec:
     at: "12:00"
 ```
 
-## Advance Usage
+## Dry-run
 
-Add the 'dry-run' key for It will validate and verify
+Add the 'dry-run' key for only validate and verify the action
 
 ```yaml
 apiVersion: resource-management.tikalk.com/v1alpha1
@@ -161,6 +161,12 @@ metadata:
 spec:
   disabled: false
   dry-run: false
+  selector:
+     matchLabels:
+        app: nginx
+  action: delete
+  expiration:
+     after: "30m"
 ```
 
 
