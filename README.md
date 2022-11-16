@@ -128,8 +128,10 @@ spec:
     after: "8h"
 ```
 ###
+#
 You can also delete a resource within a specific hour by using the 'at' key. let's say 12:00
-2. Delete a specific deployment on a specific hour on daily basis
+
+Delete a specific deployment on a specific hour on daily basis
 ```yaml
 apiVersion: resource-management.tikalk.com/v1alpha1
 kind: ResourceManager
