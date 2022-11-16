@@ -103,7 +103,7 @@ Here's why:
 
 
 <!-- USAGE EXAMPLES -->
-###  Usage
+##  Usage
 Let's say you want to give a specific deployments only 8 hours to live.
 You can create this kind of policy by applying a *ResourceManager* object.
 
@@ -197,7 +197,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- Creators -->
 ## Creators
 
-[Daniel Rozner](https://github.com/daniel-ro), [Gaby Tal](https://github.com/gabytal), [Amit Karni](https://github.com/Amitk3293), [Boris Komraz](https://github.com/bkomraz1)
+[Gaby Tal](https://github.com/gabytal), [Amit Karni](https://github.com/Amitk3293), [Boris Komraz](https://github.com/bkomraz1), [Daniel Rozner](https://github.com/daniel-ro)
 
 
 
