@@ -24,7 +24,7 @@
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">Resource manager operator</h3>
+  <h3 align="center">Resource Manager Operator</h3>
 
   <p align="center">
     Auto-manage  k8s resources
@@ -32,8 +32,6 @@
     <a href="https://github.com/tikalk/resource-manager"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/tikalk/resource-manager">View Demo</a>
-    ·
     <a href="https://github.com/tikalk/resource-manager/issues">Report Bug</a>
     ·
     <a href="https://github.com/tikalk/resource-manager/issues">Request Feature</a>
@@ -109,11 +107,11 @@ To get a local copy up and running follow these simple example steps.
 
 
 <!-- USAGE EXAMPLES -->
-##  Scenario
+##  Simple
 Let's say you want to give a specific deployments only 8 hours to live.
 You can create this kind of policy by applying a *ResourceManager* object.
-1. Delete every deployment in default namespace that has the 'app=nginx' label, after 8 hours from its creation time
 
+Delete every deployment in default namespace that has the 'app=nginx' label, after 8 hours from its creation time
 ```yaml
 apiVersion: resource-management.tikalk.com/v1alpha1
 kind: ResourceManager
