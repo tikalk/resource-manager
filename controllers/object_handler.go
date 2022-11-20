@@ -152,7 +152,7 @@ func (h *ObjectHandler) Run() {
 	} else if cond.ExpireAt != "" {
 		expireAt, err := time.Parse("15:04", cond.ExpireAt)
 		if err != nil {
-			h.log.Error(err, trace(fmt.Sprintf("Failed to parse <%s>. object handler <%s> aborted.", cond.ExpireAt, h.fullname)))
+			h.log.Error(err, trace(fmt.Sprintf("Failed to parse ExpireAt parameter <%s>. object handler <%s> aborted.", cond.ExpireAt, h.fullname)))
 			return
 		}
 
