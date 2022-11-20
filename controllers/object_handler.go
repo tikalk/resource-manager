@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/tikalk/resource-manager/api/v1alpha1"
-	"github.com/tikalk/resource-manager/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -137,59 +136,66 @@ func (h *ObjectHandler) performObjectPatch() (err error) {
 
 // Run calculates the expiration time of an object and perform the desired action when the time arrives
 func (h *ObjectHandler) Run() {
-	var secLeft int
-	var err error
+	var wait time.Duration
 
 	cond := h.resourceManager.Spec.Condition
-	if cond.ExpireAt == "" && cond.ExpireAfter == "" {
+	if cond.ExpireAfter != "" {
+		expireAfter, err := time.ParseDuration(cond.ExpireAfter)
+		if err != nil {
+			h.log.Error(err, trace(fmt.Sprintf("cannot parse ExpireAfter parameter <%s>. object handler <%s> aborted", cond.ExpireAfter, h.fullname)))
+			return
+		}
+		age := time.Now().Sub(h.creationTime)
+		wait = expireAfter - age
+
+		h.log.Info(trace(fmt.Sprintf("object age expiration <%s> after <%s> age <%s> wait <%s>", h.fullname, expireAfter.String(), age.String(), wait.String())))
+	} else if cond.ExpireAt != "" {
+		expireAt, err := time.Parse("15:04", cond.ExpireAt)
+		if err != nil {
+			h.log.Error(err, trace(fmt.Sprintf("Failed to parse <%s>. object handler <%s> aborted.", cond.ExpireAt, h.fullname)))
+			return
+		}
+
+		now := time.Now()
+		if expireAt.Hour()*60+expireAt.Minute() > now.Hour()*60+now.Minute() {
+			// Today
+			wait = time.Date(now.Year(), now.Month(), now.Day(), expireAt.Hour(), expireAt.Minute(), 0, 0, now.Location()).Sub(now)
+		} else {
+			// Tomorrow
+			tomorrow := now.Add(24 * time.Hour)
+			wait = time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), expireAt.Hour(), expireAt.Minute(), 0, 0, tomorrow.Location()).Sub(now)
+		}
+
+		h.log.Info(trace(fmt.Sprintf("object time expiration <%s> expireAt <%s> now <%s> wait <%s>", h.fullname, expireAt.String(), now.String(), wait)))
+	} else {
 		h.log.Error(errors.New("expiration is not configured"), trace(fmt.Sprintf("object handler <%s> aborted", h.fullname)))
 		return
 	}
 
-	if cond.ExpireAfter != "" {
-		err, secLeft = utils.IsObjExpired(h.creationTime, h.resourceManager.Spec.Condition.ExpireAfter)
-		fmt.Printf("\n\n\n seconds left: %d \n\n\n", secLeft)
-		if err != nil {
-			h.log.Error(errors.New("cannot calculate expiration time"), trace(fmt.Sprintf("object handler <%s> aborted", h.fullname)))
-			return
-		}
-		h.log.Info(trace(fmt.Sprintf("object will be expired in <%d> seconds", secLeft)))
-
-	} else if cond.ExpireAt != "" {
-		err, secLeft = utils.IsIntervalOccurred(time.Now(), h.resourceManager.Spec.Condition.ExpireAt)
-		if err != nil {
-			h.log.Error(errors.New("cannot calculate timeframe"), trace(fmt.Sprintf("object handler <%s> aborted", h.fullname)))
-			return
-		}
-		h.log.Info(trace(fmt.Sprintf("object will be expired in <%d> seconds", secLeft)))
-
-	}
-
-	if secLeft <= 0 {
+	if wait <= 0 {
 		h.log.Info(trace(fmt.Sprintf("object already expired <%s>", h.fullname)))
-		return
-	}
-
-	select {
-	case <-h.stopper:
-		h.log.Info(trace(fmt.Sprintf("h aborted for object<%s>", h.fullname)))
-		return
-	case <-time.After(time.Duration(secLeft) * time.Second):
-		h.log.Info(trace(fmt.Sprintf("object expired <%s>", h.fullname)))
-		break
+	} else {
+		select {
+		case <-h.stopper:
+			h.log.Info(trace(fmt.Sprintf("h aborted for object<%s>", h.fullname)))
+			return
+		case <-time.After(wait):
+			h.log.Info(trace(fmt.Sprintf("object expired <%s>", h.fullname)))
+			break
+		}
 	}
 
 	if h.resourceManager.Spec.DryRun {
 		h.log.Info(trace(fmt.Sprintf("dry-run performing object <%s> action <%s> ", h.fullname, h.resourceManager.Spec.Action)))
-		return
-	}
-
-	h.log.Info(trace(fmt.Sprintf("performing object <%s> action <%s>...", h.fullname, h.resourceManager.Spec.Action)))
-	err = h.performObjectAction()
-	if err != nil {
-		h.log.Error(err, trace(fmt.Sprintf("object <%s> action <%s> failed", h.fullname, h.resourceManager.Spec.Action)))
 	} else {
-		h.log.Info(trace(fmt.Sprintf("object <%s> action <%s> finished", h.fullname, h.resourceManager.Spec.Action)))
+		h.log.Info(trace(fmt.Sprintf("performing object <%s> action <%s>...", h.fullname, h.resourceManager.Spec.Action)))
+		err := h.performObjectAction()
+		if err != nil {
+			h.log.Error(err, trace(fmt.Sprintf("object <%s> action <%s> failed", h.fullname, h.resourceManager.Spec.Action)))
+		} else {
+			h.log.Info(trace(fmt.Sprintf("object <%s> action <%s> finished", h.fullname, h.resourceManager.Spec.Action)))
+		}
+
 	}
 
 }
