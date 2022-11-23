@@ -1,0 +1,16 @@
+apiVersion: v1
+entries:
+  resource-manager-operator:
+  - apiVersion: v2
+    appVersion: 0.1.1
+    created: "2022-11-23T11:38:32.212892+01:00"
+    description: A Helm chart for deploying resource-manager-operator CRD
+    digest: 6ea3330a99cdac50a02b2cc419d4e648c5d69f2524bdb1dbf4e9d250a2bae767
+    home: https://github.com/tikalk/resource-manager
+    name: resource-manager-operator
+    sources:
+    - https://github.com/tikalk/resource-manager
+    urls:
+    - https://tikalk.github.io/resource-manager/packages/resource-manager-operator-0.1.0.tgz
+    version: 0.1.0
+generated: "2022-11-23T11:38:32.208306+01:00"
