@@ -14,3 +14,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           charts_dir: Charts/resource-manager-operator
           target_dir: packages
+          linting: off
