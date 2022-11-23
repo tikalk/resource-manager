@@ -11,6 +11,6 @@ entries:
     sources:
     - https://github.com/tikalk/resource-manager
     urls:
-    - https://tikalk.github.io/resource-manager/charts/resource-manager-operator/packages/resource-manager-operator-0.1.0.tgz
+    - https://tikalk.github.io/resource-manager/packages/resource-manager-operator-0.1.0.tgz
     version: 0.1.0
 generated: "2022-11-23T11:38:32.208306+01:00"
