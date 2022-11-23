@@ -39,6 +39,6 @@ jobs:
         uses: helm/chart-releaser-action@v1.4.1
         with:
           skip_packaging: true
-          charts_dir: charts/resource-manager-operator
+          charts_dir: Charts/resource-manager-operator
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
