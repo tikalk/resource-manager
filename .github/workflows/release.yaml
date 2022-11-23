@@ -34,8 +34,10 @@ jobs:
           pwd
           ls
           VERSION=${{github.ref_name}}
+          echo "before delete and create"
           rm -rf packages
           mkdir -p packages
+          echo "delete and create"
           helm package ./Charts/resource-manager-operator --app-version=${VERSION:1} --version=${VERSION:1} --destination=./packages
 
       - name: Run chart-releaser
