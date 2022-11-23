@@ -31,6 +31,7 @@ jobs:
       
       - name: custom packaging
         run: |
+          pwd
           VERSION=${{github.ref_name}}
           rm -rf packages
           mkdir -p packages
