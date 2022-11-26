@@ -3,6 +3,7 @@
 # It should be run by config/default
 resources:
 - bases/resource-management.tikalk.com_resourcemanagers.yaml
+- bases/resource-management.tikalk.com_clusterresourcemanagers.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

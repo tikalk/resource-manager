@@ -23,59 +23,44 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// ResourceManagerSpec defines the desired state of ResourceManager
-type ResourceManagerSpec struct {
+// ClusterResourceManagerSpec defines the desired state of ClusterResourceManager
+type ClusterResourceManagerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Disabled bool `json:"disabled,omitempty"`
-	DryRun   bool `json:"dry-run,omitempty"`
+	ResourceManagerSpec `json:",inline"`
 
-	//ManagedResource ResourceSelector `json:",inline"`
-	ResourceKind string                `json:"resourceKind"`
-	Selector     *metav1.LabelSelector `json:"selector"`
-	//NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
-
-	// TODO: add validation + enum
-	Action      string `json:"action"`
-	ActionParam string `json:"actionParam,omitempty"`
-
-	Condition Expiration `json:"expiration"`
+	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector"`
 }
 
-type Expiration struct {
-	ExpireAt    string `json:"at,omitempty"`
-	ExpireAfter string `json:"after,omitempty"`
-}
-
-// ResourceManagerStatus defines the observed state of ResourceManager
-type ResourceManagerStatus struct {
+// ClusterResourceManagerStatus defines the observed state of ClusterResourceManager
+type ClusterResourceManagerStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:scope=Namespaced
+//+kubebuilder:resource:scope=Cluster
 
-// ResourceManager is the Schema for the resourcemanagers API
-type ResourceManager struct {
+// ClusterResourceManager is the Schema for the ClusterResourceManagers API
+type ClusterResourceManager struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ResourceManagerSpec   `json:"spec,omitempty"`
-	Status ResourceManagerStatus `json:"status,omitempty"`
+	Spec   ClusterResourceManagerSpec   `json:"spec,omitempty"`
+	Status ClusterResourceManagerStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// ResourceManagerList contains a list of ResourceManager
-type ResourceManagerList struct {
+// ClusterResourceManagerList contains a list of ClusterResourceManager
+type ClusterResourceManagerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ResourceManager `json:"items"`
+	Items           []ClusterResourceManager `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&ResourceManager{}, &ResourceManagerList{})
+	SchemeBuilder.Register(&ClusterResourceManager{}, &ClusterResourceManagerList{})
 }

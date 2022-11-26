@@ -1,0 +1,35 @@
+apiVersion: resource-management.tikalk.com/v1alpha1
+kind: ClusterResourceManager
+metadata:
+  name: cluster-resource-manager
+spec:
+  disabled: false
+  dry-run: false
+  resourceKind: "Namespace"
+  selector:
+    matchLabels:
+      component: redis
+    matchExpressions:
+      - { key: tier, operator: In, values: [ cache ] }
+      - { key: environment, operator: NotIn, values: [ dev, dev2 ] }
+
+#  action: delete
+  action: patch
+  actionParam: '{"metadata":{"annotations":{"resource-management.tikalk.com/patched":"true"}}}'
+
+  expiration:
+#    at: 18:57
+    after: "2m"
+  # OR
+  # - type: time
+  #   interval: daily
+  #   time: "20:59:59"
+#  namespaceSelector: {}
+  namespaceSelector:
+    matchLabels:
+      managed: "true"
+#    matchExpressions:
+#      - { key: tier, operator: In, values: [ cache ] }
+#      - { key: environment, operator: NotIn, values: [ prod ] }
+
+#status:
