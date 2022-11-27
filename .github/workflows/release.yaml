@@ -36,7 +36,7 @@ jobs:
           helm package Charts/resource-manager-operator --app-version=${VERSION:1} --version=${VERSION:1} --destination=packages
 
       - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.4.1
+        uses: askcloudarchitech/chart-releaser-action@skip-packaging-option
         with:
           skip_packaging: true
           charts_dir: Charts/resource-manager-operator
