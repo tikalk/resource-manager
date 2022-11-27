@@ -42,4 +42,3 @@ jobs:
           charts_dir: Charts/resource-manager-operator
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
