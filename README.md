@@ -209,3 +209,4 @@ Distributed under the MIT License.
 [license-url]: https://github.com/tikalk/resource-manager/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://il.linkedin.com/company/tikal-knowledge
+
