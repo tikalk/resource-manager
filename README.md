@@ -8,11 +8,12 @@
 *** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
+
+   [![Contributors][contributors-shield]][contributors-url]
+   [![Forks][forks-shield]][forks-url]
+   [![Stargazers][stars-shield]][stars-url]
+   [![Issues][issues-shield]][issues-url]
+   [![LinkedIn][linkedin-shield]][linkedin-url]
 
 
 
@@ -81,12 +82,13 @@ Here's why:
 
 1. add the helm repo
    ```bash
-    helm repo add resource-manager https://resourcemanager.github.io/charts/resource-manager-charts   
+    helm repo add resource-manager https://tikalk.github.io/resource-manager   
     helm repo update
+   ```
 2. Install the chart
    ```bash
-   helm install resource-manager resource-manager/resource-manager-operator \
-   -f values.yaml --create-namespace -n resource-manager
+   helm install resource-manager resource-manager/resource-manager-operator \ 
+   --create-namespace -n resource-manager
    ```
 
 
