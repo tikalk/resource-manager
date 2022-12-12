@@ -1,0 +1,20 @@
+# permissions for end users to view clusterresourcemanagers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: clusterresourcemanager-viewer-role
+rules:
+- apiGroups:
+  - resource-management.tikalk.com
+  resources:
+  - clusterresourcemanagers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - resource-management.tikalk.com
+  resources:
+  - clusterresourcemanagers/status
+  verbs:
+  - get

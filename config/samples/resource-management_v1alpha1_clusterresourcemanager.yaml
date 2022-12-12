@@ -1,0 +1,6 @@
+apiVersion: resource-management.tikalk.com/v1alpha1
+kind: ClusterResourceManager
+metadata:
+  name: clusterresourcemanager-sample
+spec:
+  # TODO(user): Add fields here
