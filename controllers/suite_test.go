@@ -35,6 +35,7 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	resourcemanagementv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
 	resourcemanagmentv1alpha1 "github.com/tikalk/resource-manager/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
@@ -69,6 +70,9 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	err = resourcemanagmentv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = resourcemanagementv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
