@@ -1,0 +1,7 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+testDirs:
+- ./tests/e2e/
+timeout: 180
+commands:
+  - command: kubectl wait --for=condition=ready --timeout=120s pod -l control-plane=controller-manager -n resource-manager-system
